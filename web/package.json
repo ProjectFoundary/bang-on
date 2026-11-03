@@ -1,0 +1,22 @@
+{
+  "name": "keyfx-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "test:unit": "node tests/nativeTiming.mjs && node tests/elementWorkflow.mjs && node tests/elementTiming.mjs && node tests/elementBatch.mjs && node tests/effectTracking.mjs && node tests/viewerCache.mjs"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^5.1.1",
+    "@tsconfig/svelte": "^5.0.8",
+    "svelte": "^5.57.1",
+    "svelte-check": "^4.7.6",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.3"
+  },
+  "dependencies": {
+    "fflate": "^0.8.3"
+  }
+}

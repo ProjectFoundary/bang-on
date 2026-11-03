@@ -1,0 +1,71 @@
+{
+  "id": "smoke_plume_hq",
+  "name": "Smoke plume (HQ)",
+  "category": "Smoke",
+  "default_start_frame": -200,
+  "status": "simulation",
+  "default_where": "the marked spot",
+  "description": "Squib's authored high-quality grey smoke plume: continuous billowing emission, rising warm smoke and persistent fine density detail.",
+  "phases": [
+    {
+      "phase": "before",
+      "label": "Clean",
+      "offset": -2
+    },
+    {
+      "phase": "start",
+      "label": "Source starts",
+      "offset": 0,
+      "stamp": "puff.png",
+      "anchor": [
+        0.5,
+        0.8
+      ],
+      "scale": 0.1
+    },
+    {
+      "phase": "billow",
+      "label": "Billowing",
+      "offset": 24,
+      "stamp": "puff.png",
+      "anchor": [
+        0.5,
+        0.8
+      ],
+      "scale": 0.3
+    },
+    {
+      "phase": "rise",
+      "label": "Rising plume",
+      "offset": 48,
+      "stamp": "puff.png",
+      "anchor": [
+        0.5,
+        0.8
+      ],
+      "scale": 0.55,
+      "persist": true
+    }
+  ],
+  "looks": [
+    {
+      "file": "look_smoke.png",
+      "text": "A close-up grey smoke texture swatch for colour and detail only; it is not a photographed room or an object to place."
+    }
+  ],
+  "prompt": {
+    "subject": "a neutral grey smoke plume rising from {where}",
+    "timing": "smoke begins at {start}, billows by {billow}, and develops into a rising plume by {rise}",
+    "action": "At {start} a continuous source at {where} releases neutral grey smoke. Warm billows rise, curl and broaden with fine persistent density detail.",
+    "sound": "a soft hiss of escaping smoke",
+    "timing_preroll": "a grey smoke plume is already billowing from {where} when the shot begins",
+    "action_preroll": "From the first frame an established neutral grey plume rises and curls from {where}, continuously fed by the source."
+  },
+  "direction": {
+    "kind": "wind",
+    "angle": 0,
+    "strength": 0,
+    "label": "Wind",
+    "noun": "smoke"
+  }
+}

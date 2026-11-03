@@ -1,0 +1,64 @@
+{
+  "id": "sparks",
+  "name": "Sparks (metal hit)",
+  "category": "Impacts",
+  "status": "proven",
+  "default_where": "the metal surface",
+  "description": "A ricochet or metal strike: a short burst of bright sparks that fades in a few frames.",
+  "phases": [
+    {
+      "phase": "before",
+      "label": "Clean",
+      "offset": -2
+    },
+    {
+      "phase": "burst",
+      "label": "Burst",
+      "offset": 0,
+      "stamp": "sparks.png",
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "scale": 0.2,
+      "glow": 0.5,
+      "glow_radius": 1.0
+    },
+    {
+      "phase": "fade",
+      "label": "Fading",
+      "offset": 3,
+      "stamp": "sparks.png",
+      "anchor": [
+        0.5,
+        0.45
+      ],
+      "scale": 0.26,
+      "opacity": 0.35
+    },
+    {
+      "phase": "clear",
+      "label": "Clear",
+      "offset": 8
+    }
+  ],
+  "looks": [
+    {
+      "file": "look_sparks.png",
+      "text": "A close view of metal sparks: spark streak detail only."
+    }
+  ],
+  "prompt": {
+    "subject": "a burst of sparks at {where}",
+    "timing": "a burst of bright sparks flies from {where} at {burst}, fading by {fade} and gone by {clear}",
+    "action": "At {burst} something strikes {where}: a short burst of bright orange sparks flies outward at full real-time speed with no slow motion, the sparks arc and die out within a few frames.",
+    "sound": "a sharp metallic strike"
+  },
+  "direction": {
+    "kind": "spray",
+    "angle": 0,
+    "strength": 0.6,
+    "label": "Spray",
+    "noun": "sparks"
+  }
+}

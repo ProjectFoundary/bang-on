@@ -1,0 +1,43 @@
+{
+  "11": {
+    "inputs": {
+      "image": "clean.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "30": {
+    "inputs": {
+      "filename_prefix": "posthub_muzzle_nano_clean_only_v1",
+      "images": [
+        "35",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "35": {
+    "inputs": {
+      "prompt": "Edit this clean photograph. Add one brief photographic muzzle flash emerging\nfrom the existing pistol muzzle, without moving or changing the weapon.\nOn the supplied 1376 by 768 image, the muzzle is approximately at pixel (772, 257),\n56.1 percent across and 33.5 percent down from the upper-left corner.\nThe flame extends screen-right and slightly upward, about 10 degrees above horizontal,\ntoward approximately pixel (931, 229), with about 161 pixels of flame extent.\nUse the visible barrel as the attachment authority. These numbers describe placement;\nthe output is solely the photographic image, with no visible measurement graphics.\n\nThe most important change is the flash's interactive illumination:\nadd plausible brief light and reflections to nearby visible hands, skin,\nclothing, the weapon and surrounding surfaces where appropriate.\nRespect visible form and occlusion. Preserve the ambient exposure and grade\naway from the flash's influence. Do not apply a uniform orange overlay.\nThe direction describes the flame extent, not a spotlight beam across the scene.\n\nPreserve the actor's identity, facial expression, pose, hand anatomy,\nweapon geometry, background geometry, framing, focus, texture and motion blur.\nAdd only the flash and its light response. Do not add smoke, shell casings,\nrecoil, other objects, text or annotations. Return one edited photograph with\nthe original composition and black padding border.\n",
+      "model": "gemini-3-pro-image-preview",
+      "seed": 184921,
+      "aspect_ratio": "16:9",
+      "resolution": "1K",
+      "response_modalities": "IMAGE",
+      "system_prompt": "You are an expert image-generation engine. You must ALWAYS produce an image.\nInterpret all user input\u2014regardless of format, intent, or abstraction\u2014as literal visual directives for image composition.\nIf a prompt is conversational or lacks specific visual details, you must creatively invent a concrete visual scenario that depicts the concept.\nPrioritize generating the visual representation above any text, formatting, or conversational requests.",
+      "images": [
+        "11",
+        0
+      ]
+    },
+    "class_type": "GeminiImage2Node",
+    "_meta": {
+      "title": "Nano Banana Pro (Google Gemini Image)"
+    }
+  }
+}

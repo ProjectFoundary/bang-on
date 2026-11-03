@@ -1,0 +1,73 @@
+{
+  "id": "smoke_white",
+  "name": "White smoke (grenade)",
+  "category": "Smoke",
+  "status": "proven",
+  "default_where": "the marked spot",
+  "description": "Dense white smoke billowing out and spreading, like a smoke grenade.",
+  "phases": [
+    {
+      "phase": "before",
+      "label": "Clean",
+      "offset": -2
+    },
+    {
+      "phase": "start",
+      "label": "Burst",
+      "offset": 0,
+      "stamp": "puff.png",
+      "anchor": [
+        0.5,
+        0.8
+      ],
+      "scale": 0.1,
+      "polish": "first burst of dense white smoke at {where}"
+    },
+    {
+      "phase": "billow",
+      "label": "Billowing",
+      "offset": 10,
+      "stamp": "puff.png",
+      "anchor": [
+        0.5,
+        0.8
+      ],
+      "scale": 0.3,
+      "polish": "dense white smoke rolling out low and wide from {where}"
+    },
+    {
+      "phase": "fill",
+      "label": "Spreading",
+      "offset": 30,
+      "stamp": "puff.png",
+      "anchor": [
+        0.5,
+        0.8
+      ],
+      "scale": 0.6,
+      "persist": true,
+      "polish": "dense white smoke spreading low across the ground around {where}"
+    }
+  ],
+  "looks": [
+    {
+      "file": "look_smoke.png",
+      "text": "A close-up texture swatch of dense white smoke: colour and detail only. It is not an object to place in the shot and says nothing about its shape or direction."
+    }
+  ],
+  "prompt": {
+    "subject": "dense white smoke billowing from {where}",
+    "timing": "white smoke bursts from {where} at {start}, billowing by {billow} and spreading wide by {fill}",
+    "action": "At {start} dense white smoke bursts out of {where} and rolls outward slowly at its own natural pace, spreading wide and low, billowing, hanging in the air and thinning at its edges.",
+    "sound": "a hiss of escaping smoke",
+    "timing_preroll": "dense white smoke is already billowing from {where} when the shot begins, spreading slowly and hanging in the air throughout",
+    "action_preroll": "From the very first frame dense white smoke is already billowing out of {where}, rolling outward slowly, spreading wide and low and hanging in the air, thinning at its edges."
+  },
+  "direction": {
+    "kind": "wind",
+    "angle": 0,
+    "strength": 0,
+    "label": "Wind",
+    "noun": "smoke"
+  }
+}

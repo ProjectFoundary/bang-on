@@ -1,0 +1,28 @@
+// Actual native/VFR frame-time mapping used by review/preview controls.
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {fileURLToPath} from 'node:url';
+const local=createRequire(new URL('../package.json',import.meta.url));
+const {build}=local('esbuild');
+const bundle=await build({entryPoints:[fileURLToPath(new URL('../src/nativeTiming.ts',import.meta.url))],bundle:true,write:false,format:'esm'});
+const t=await import('data:text/javascript;base64,'+Buffer.from(bundle.outputFiles[0].text).toString('base64'));
+const fps=24000/1001;
+assert.equal(t.frameTime(120,fps),5.005);
+assert.equal(t.frameAtTime(120/fps,300,fps),120);
+assert.equal(t.frameAtTime(.5,100,60),30);
+assert.equal(t.frameTime(48),2);
+const pts=[0,.04,.16,.36];
+assert.equal(t.frameAtTime(.159,4,10,pts),1);
+assert.equal(t.frameAtTime(.16,4,10,pts),2);
+assert.equal(t.frameAtTime(.35,4,10,pts),2);
+assert.equal(t.frameAtTime(9,4,10,pts),3);
+assert.equal(t.frameTime(3,10,pts),.36);
+assert.equal(t.frameTime(-10,10,pts),-1);
+assert.equal(t.frameAtTime(.12,4,10,[2,2.04,2.16,2.36]),1);
+assert.equal(t.safeAspect(9/16),9/16);
+assert.equal(t.safeAspect(NaN),16/9);
+assert.equal(t.safeFps(0),24);
+assert.deepEqual(t.previewCrop(260,36,259,35),[260/259,36/35]);
+assert.deepEqual(t.previewCrop(1920,1080,1920,1080),[1,1]);
+assert.deepEqual(t.previewCrop(960,540,1920,1080),[1,1]);
+console.log('Native23.976/60fps, VFR timestamp binary search, legacy defaults and portrait aspect pass.');

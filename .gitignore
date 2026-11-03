@@ -1,0 +1,39 @@
+data/
+.venv/
+__pycache__/
+*.pyc
+tools/stamps_raw/
+tools/stamps_keyed/
+web/node_modules/
+web/dist/
+.DS_Store
+.pytest_cache/
+
+# Local development, generated media and credentials
+.env
+.env.*
+!.env.example
+tmp/
+output/
+experiments/
+audits/
+research/
+dist/
+*.pem
+*.key
+
+# Packaging, reports and editor state
+*.egg-info/
+*.whl
+build/
+.coverage
+htmlcov/
+.ruff_cache/
+.mypy_cache/
+.playwright/
+node_modules/
+*.log
+connection.json
+local-settings.json
+# Public demo movies are attached to tagged releases.
+demo/*.mp4

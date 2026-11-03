@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "examples": [
+    {
+      "id": "example-plane-smoke-v1",
+      "name": "Example \u00b7 Plane smoke",
+      "archive": "example-plane-smoke-v1.zip",
+      "sha256": "1cd2e46a5eab0b64fcca92cafcf03af9ff7aca5cde156c91e7f407861547a8b3",
+      "files": 296,
+      "unique_assets": 171
+    },
+    {
+      "id": "example-house-explosion-v1",
+      "name": "Example \u00b7 House explosion",
+      "archive": "example-house-explosion-v1.zip",
+      "sha256": "f2b683921f37b1a11cb6a64e3a375c01a0917addfab44d237c45f724c5bbf843",
+      "files": 210,
+      "unique_assets": 19
+    }
+  ]
+}

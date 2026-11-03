@@ -1,0 +1,95 @@
+{
+  "id": "explosion",
+  "name": "Explosion",
+  "category": "Fire & explosions",
+  "status": "proven",
+  "default_where": "the marked spot",
+  "description": "A blast with a blinding flash, a fireball and flying debris, settling into burning debris under black smoke.",
+  "guide_phases": ["before", "onset", "peak"],
+  "phases": [
+    {
+      "phase": "before",
+      "label": "Clean",
+      "offset": -2
+    },
+    {
+      "phase": "onset",
+      "label": "Flash",
+      "offset": 0,
+      "stamp": "onset.png",
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "scale": 0.2,
+      "glow": 0.9,
+      "glow_radius": 1.0,
+      "polish": "blinding flash and burst of flame at the first instant of an explosion at {where}"
+    },
+    {
+      "phase": "peak",
+      "label": "Fireball",
+      "offset": 6,
+      "stamp": "peak.png",
+      "anchor": [
+        0.5,
+        0.72
+      ],
+      "scale": 0.5,
+      "glow": 0.5,
+      "glow_radius": 1.2,
+      "polish": "large explosion fireball erupting from {where}: a rolling ball of orange flame wrapped in dark smoke"
+    },
+    {
+      "phase": "rolling",
+      "label": "Smoke",
+      "offset": 12,
+      "stamp": "aftermath.png",
+      "anchor": [
+        0.5,
+        0.95
+      ],
+      "scale": 0.55,
+      "glow": 0.4,
+      "glow_radius": 1.0,
+      "polish": "fireball rolling up into thick black smoke over burning debris at {where}"
+    },
+    {
+      "phase": "aftermath",
+      "label": "Burning",
+      "offset": 21,
+      "stamp": "aftermath.png",
+      "anchor": [
+        0.5,
+        0.95
+      ],
+      "scale": 0.42,
+      "glow": 0.25,
+      "persist": true,
+      "polish": "burning debris under thick black smoke at {where}"
+    }
+  ],
+  "looks": [
+    {
+      "file": "look_peak.png",
+      "text": "A close-up texture swatch of the fireball's churning flame: colour and surface detail only. It is not an object to place in the shot."
+    },
+    {
+      "file": "look_aftermath.png",
+      "text": "A close-up texture swatch of flames under black smoke: colour and detail of the burning only. It is not an object to place in the shot."
+    }
+  ],
+  "prompt": {
+    "subject": "a large explosion at {where}",
+    "timing": "the first blinding flash bursts from {where} at {onset}, a large fireball with flying debris at {peak}, the fireball rolling up into black smoke over burning debris at {rolling}, and burning debris under black smoke from {aftermath} to the end",
+    "action": "At {onset} a huge explosion erupts from {where} with a blinding flash. Splintered debris and chunks are blasted outward at full real-time speed with no slow motion, fly fast and fall hard within a fraction of a second. The fireball expands violently and burns out within about one second, rolling up into thick black smoke while debris keeps burning. The blast lights nearby surfaces and people orange for a moment. There is only one explosion; afterwards the debris just burns and smokes.",
+    "sound": "a huge explosion, debris hitting the ground, crackling fire"
+  },
+  "direction": {
+    "kind": "wind",
+    "angle": 0,
+    "strength": 0,
+    "label": "Wind",
+    "noun": "smoke"
+  }
+}

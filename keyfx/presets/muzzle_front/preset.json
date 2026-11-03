@@ -1,0 +1,65 @@
+{
+  "id": "muzzle_front",
+  "name": "Muzzle flash (toward camera)",
+  "category": "Gunfire",
+  "status": "experimental",
+  "default_where": "the muzzle of the gun",
+  "description": "A single one-frame star-shaped muzzle flash fired toward the camera, then a faint wisp of smoke.",
+  "phases": [
+    {
+      "phase": "before",
+      "label": "Clean",
+      "offset": -2
+    },
+    {
+      "phase": "flash",
+      "label": "Flash",
+      "offset": 0,
+      "stamp": "flash.png",
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "scale": 0.1,
+      "glow": 0.8,
+      "glow_radius": 1.4,
+      "hard": true
+    },
+    {
+      "phase": "smoke",
+      "label": "Smoke wisp",
+      "offset": 2,
+      "stamp": "smoke.png",
+      "anchor": [
+        0.5,
+        0.6
+      ],
+      "scale": 0.07,
+      "opacity": 0.4
+    },
+    {
+      "phase": "clear",
+      "label": "Clear",
+      "offset": 8
+    }
+  ],
+  "looks": [
+    {
+      "file": "look_flash.png",
+      "text": "A close view of a muzzle flash fired toward the camera: flame shape and colour only."
+    }
+  ],
+  "prompt": {
+    "subject": "a gunshot muzzle flash toward the camera at {where}",
+    "timing": "a single bright star-shaped muzzle flash bursts from {where} at {flash}, leaving a faint wisp of smoke that is gone by {clear}",
+    "action": "At {flash} the gun fires toward the camera: a single brief star-shaped white-yellow muzzle flash lasting one frame bursts from {where}, lighting the shooter for an instant, followed by a faint wisp of gun smoke that quickly disappears.",
+    "sound": "a single sharp gunshot"
+  },
+  "direction": {
+    "kind": "none",
+    "angle": 0,
+    "strength": 0,
+    "label": "",
+    "noun": "muzzle flash"
+  }
+}

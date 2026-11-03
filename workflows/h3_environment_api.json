@@ -1,0 +1,223 @@
+{
+  "unet": {
+    "class_type": "UNETLoader",
+    "inputs": {
+      "unet_name": "minimax_h3_ref2va_pruned_int8_convrot.safetensors",
+      "weight_dtype": "default"
+    }
+  },
+  "shift": {
+    "class_type": "MiniMaxH3SigmaShift",
+    "inputs": {
+      "model": [
+        "unet",
+        0
+      ],
+      "shift_video": 12.0,
+      "shift_audio": 3.0
+    }
+  },
+  "clip": {
+    "class_type": "CLIPLoader",
+    "inputs": {
+      "clip_name": "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+      "type": "minimax",
+      "device": "default"
+    }
+  },
+  "vae": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "minimax_h3_video_vae_fp16.safetensors"
+    }
+  },
+  "proxy_video": {
+    "class_type": "LoadVideo",
+    "inputs": {
+      "file": "structure.mp4"
+    }
+  },
+  "proxy_frames": {
+    "class_type": "GetVideoComponents",
+    "inputs": {
+      "video": [
+        "proxy_video",
+        0
+      ]
+    }
+  },
+  "latent": {
+    "class_type": "EmptyMiniMaxH3LatentAV",
+    "inputs": {
+      "width": 960,
+      "height": 544,
+      "length": 56
+    }
+  },
+  "noise": {
+    "class_type": "RandomNoise",
+    "inputs": {
+      "noise_seed": 42
+    }
+  },
+  "sampler": {
+    "class_type": "KSamplerSelect",
+    "inputs": {
+      "sampler_name": "euler"
+    }
+  },
+  "sigmas": {
+    "class_type": "ManualSigmas",
+    "inputs": {
+      "sigmas": "1, 0.995633187773, 0.990825688073, 0.985507246377, 0.979591836735, 0.972972972973, 0.965517241379, 0.957055214724, 0.947368421053, 0.936170212766, 0.923076923077, 0.90756302521, 0.888888888889, 0.865979381443, 0.837209302326, 0.8, 0.75, 0.679245283019, 0.571428571429, 0.387096774194, 0"
+    }
+  },
+  "sample": {
+    "class_type": "SamplerCustomAdvanced",
+    "inputs": {
+      "noise": [
+        "noise",
+        0
+      ],
+      "guider": [
+        "guider",
+        0
+      ],
+      "sampler": [
+        "sampler",
+        0
+      ],
+      "sigmas": [
+        "sigmas",
+        0
+      ],
+      "latent_image": [
+        "latent",
+        0
+      ]
+    }
+  },
+  "decode": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": [
+        "sample",
+        0
+      ],
+      "vae": [
+        "vae",
+        0
+      ]
+    }
+  },
+  "video": {
+    "class_type": "CreateVideo",
+    "inputs": {
+      "images": [
+        "decode",
+        0
+      ],
+      "fps": 24
+    }
+  },
+  "save": {
+    "class_type": "SaveVideo",
+    "inputs": {
+      "video": [
+        "video",
+        0
+      ],
+      "filename_prefix": "keyfx/environment",
+      "format": "mp4",
+      "format.codec": "h264",
+      "format.codec.encoding": "re-encode",
+      "format.codec.encoding.crf": 10.0
+    }
+  },
+  "ref0": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "ref0.png"
+    }
+  },
+  "cond": {
+    "class_type": "MiniMaxH3ReferenceToVideo",
+    "inputs": {
+      "clip": [
+        "clip",
+        0
+      ],
+      "vae": [
+        "vae",
+        0
+      ],
+      "prompt": "Follow the original performance and camera in the approved scene.",
+      "width": 960,
+      "height": 544,
+      "length": 56,
+      "ref_image_size": "match",
+      "ref_images.ref_image_0": [
+        "ref0",
+        0
+      ],
+      "ref_videos.ref_video_0": [
+        "proxy_frames",
+        0
+      ]
+    }
+  },
+  "img_opening": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "opening.png"
+    }
+  },
+  "scale_opening": {
+    "class_type": "ImageScale",
+    "inputs": {
+      "image": [
+        "img_opening",
+        0
+      ],
+      "upscale_method": "lanczos",
+      "width": 960,
+      "height": 544,
+      "crop": "disabled"
+    }
+  },
+  "guide_opening": {
+    "class_type": "MiniMaxH3AddGuide",
+    "inputs": {
+      "positive": [
+        "cond",
+        0
+      ],
+      "vae": [
+        "vae",
+        0
+      ],
+      "latent": [
+        "latent",
+        0
+      ],
+      "image": [
+        "scale_opening",
+        0
+      ],
+      "frame_idx": 0
+    }
+  },
+  "guider": {
+    "class_type": "BasicGuider",
+    "inputs": {
+      "model": [
+        "shift",
+        0
+      ],
+      "conditioning": [
+        "guide_opening",
+        0
+      ]
+    }
+  }
+}

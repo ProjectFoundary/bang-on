@@ -1,0 +1,68 @@
+{
+  "ltx_rgb_api.json": {
+    "uploads": {
+      "control": {
+        "field": "file",
+        "file": "isolated-guide.mp4"
+      }
+    },
+    "output_node": "save"
+  },
+  "ltx_alpha_api.json": {
+    "uploads": {
+      "control": {
+        "field": "file",
+        "file": "generated-rgb.mp4"
+      }
+    },
+    "output_node": "save"
+  },
+  "h3_environment_api.json": {
+    "uploads": {
+      "proxy_video": {
+        "field": "file",
+        "file": "source.mp4"
+      },
+      "ref0": {
+        "field": "image",
+        "file": "scene.png"
+      },
+      "img_opening": {
+        "field": "image",
+        "file": "opening.png"
+      }
+    }
+  },
+  "h3_effects_api.json": {
+    "uploads": {
+      "proxy_video": {
+        "field": "file",
+        "file": "scene.mp4"
+      },
+      "ref0": {
+        "field": "image",
+        "file": "look.png"
+      },
+      "img_anchor": {
+        "field": "image",
+        "file": "anchor.png"
+      },
+      "img_k20": {
+        "field": "image",
+        "file": "onset.png"
+      },
+      "img_k26": {
+        "field": "image",
+        "file": "peak.png"
+      }
+    }
+  },
+  "h3_scene_hd_api.json": {
+    "uploads": {
+      "source": {
+        "field": "file",
+        "file": "scene_low.mp4"
+      }
+    }
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "id": "wall_hit",
+  "name": "Bullet hit (wall)",
+  "category": "Impacts",
+  "status": "proven",
+  "default_where": "the wall",
+  "description": "A bullet strikes a wall: a sharp puff of dust and chips that thins out, leaving a small chipped hole.",
+  "phases": [
+    {
+      "phase": "before",
+      "label": "Clean",
+      "offset": -2
+    },
+    {
+      "phase": "impact",
+      "label": "Impact",
+      "offset": 0,
+      "stamp": "burst.png",
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "scale": 0.16,
+      "with_hole": 0.3,
+      "opacity": 0.85
+    },
+    {
+      "phase": "dust",
+      "label": "Dust",
+      "offset": 4,
+      "stamp": "dust.png",
+      "anchor": [
+        0.5,
+        0.6
+      ],
+      "scale": 0.26,
+      "opacity": 0.6,
+      "with_hole": 0.2
+    },
+    {
+      "phase": "damage",
+      "label": "Hole",
+      "offset": 14,
+      "stamp": "hole",
+      "scale": 0.04,
+      "persist": true
+    }
+  ],
+  "looks": [
+    {
+      "file": "look_burst.png",
+      "text": "A close view of a bullet impact: pale dust and chip detail only, no flame."
+    }
+  ],
+  "prompt": {
+    "subject": "a bullet impact (a puff of wall dust, no flame) on {where}",
+    "timing": "a bullet strikes {where} at {impact}, its dust thins by {dust} and only a small chipped hole remains at {damage}",
+    "action": "At {impact} a bullet strikes {where}: a sharp puff of pale grey dust and small chips of the wall bursts out at full real-time speed, with no flame, no fire and no sparks, hangs for a moment and thins out, leaving a small dark chipped bullet hole that stays.",
+    "sound": "a sharp bullet impact"
+  },
+  "direction": {
+    "kind": "spray",
+    "angle": 0,
+    "strength": 0.5,
+    "label": "Spray",
+    "noun": "dust and chips"
+  }
+}

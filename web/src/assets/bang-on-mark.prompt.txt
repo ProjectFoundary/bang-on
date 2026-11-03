@@ -1,0 +1,7 @@
+Asset: bang-on-mark.png
+Method: built-in ImageGen, transparent_background=true.
+Original generated master: retained privately; not distributed.
+Project copy resized proportionally to 256 pixels for browser delivery.
+
+Prompt:
+Use case: logo-brand. Create one finished, simple brand icon for Bang On, a playful professional filmmaking and visual effects timing web application. Asset use: a compact 36 x 36 pixel header mark, a 32 x 32 favicon, and a larger 96 x 96 welcome mark. Actual transparent background, isolated mark only. A crisp bold asymmetric eight-point comic impact burst silhouette filled with a single flat pale acid-lime colour #edff79. At the centre, one thick slightly forward-slanted exclamation mark in solid very dark plum #1e1925, with a generously sized round dot, so it reads at tiny sizes. The silhouette should feel like an impact, confident and witty, not sharp or dangerous. Flat clean vector-style graphic treatment, bold simple geometry, no gradients, shadows, texture, outlines, 3D, photorealism, props or scenery. Square composition, centred with only a narrow transparent margin. No words, letters, logotype, extra symbols, mockup, paper, frame or watermark. Produce a single icon, not a grid or sheet. Transparent area outside the burst must genuinely preserve alpha.

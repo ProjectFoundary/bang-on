@@ -1,0 +1,63 @@
+{
+  "id": "dirt_hit",
+  "name": "Bullet hit (ground)",
+  "category": "Impacts",
+  "status": "experimental",
+  "default_where": "the ground",
+  "description": "A bullet kicks up a spray of soil, pebbles and dust from the ground that falls back quickly.",
+  "phases": [
+    {
+      "phase": "before",
+      "label": "Clean",
+      "offset": -2
+    },
+    {
+      "phase": "impact",
+      "label": "Kick",
+      "offset": 0,
+      "stamp": "kick.png",
+      "anchor": [
+        0.5,
+        1.0
+      ],
+      "scale": 0.22,
+      "hard": true
+    },
+    {
+      "phase": "settle",
+      "label": "Settling",
+      "offset": 5,
+      "stamp": "dust.png",
+      "anchor": [
+        0.5,
+        0.85
+      ],
+      "scale": 0.26,
+      "opacity": 0.45
+    },
+    {
+      "phase": "clear",
+      "label": "Clear",
+      "offset": 14
+    }
+  ],
+  "looks": [
+    {
+      "file": "look_kick.png",
+      "text": "A close-up texture swatch of a burst of pale grey dust and chips: colour and detail only. It is not an object to place in the shot."
+    }
+  ],
+  "prompt": {
+    "subject": "a bullet impact in {where}",
+    "timing": "a bullet kicks up dust and chips from {where} at {impact}, settling by {settle} and gone by {clear}",
+    "action": "At {impact} a bullet strikes {where}: a sharp burst of dust and small chips kicks up at full real-time speed with no slow motion and settles within half a second.",
+    "sound": "a sharp bullet impact on the ground"
+  },
+  "direction": {
+    "kind": "spray",
+    "angle": 0,
+    "strength": 0.5,
+    "label": "Spray",
+    "noun": "dust and chips"
+  }
+}

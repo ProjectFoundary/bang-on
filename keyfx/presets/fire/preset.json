@@ -1,0 +1,65 @@
+{
+  "id": "fire",
+  "name": "Fire",
+  "category": "Fire & explosions",
+  "status": "proven",
+  "default_where": "the marked spot",
+  "description": "A fire that catches and grows into tall flames, then keeps burning.",
+  "phases": [
+    {
+      "phase": "before",
+      "label": "Clean",
+      "offset": -2
+    },
+    {
+      "phase": "ignite",
+      "label": "Catch",
+      "offset": 0,
+      "stamp": "fire.png",
+      "anchor": [
+        0.5,
+        0.97
+      ],
+      "scale": 0.1,
+      "glow": 0.3,
+      "glow_radius": 1.2,
+      "polish": "small flames just catching at {where}"
+    },
+    {
+      "phase": "burning",
+      "label": "Burning",
+      "offset": 12,
+      "stamp": "fire.png",
+      "anchor": [
+        0.5,
+        0.97
+      ],
+      "scale": 0.42,
+      "glow": 0.45,
+      "glow_radius": 1.2,
+      "persist": true,
+      "polish": "fire burning at {where}"
+    }
+  ],
+  "looks": [
+    {
+      "file": "look_fire.png",
+      "text": "A close-up texture swatch of flame: colour and detail only. It is not an object to place in the shot and says nothing about its shape or direction."
+    }
+  ],
+  "prompt": {
+    "subject": "a fire at {where}",
+    "timing": "a small fire catches at {where} at {ignite} and is burning with tall flames by {burning}",
+    "action": "At {ignite} a fire catches at {where} and quickly grows into tall flickering flames that keep burning, casting a warm flickering light on nearby surfaces.",
+    "sound": "crackling fire",
+    "timing_preroll": "a fire is already burning at {where} when the shot begins and keeps burning with tall flames throughout",
+    "action_preroll": "From the very first frame a fire is already burning at {where}: tall flickering flames that keep burning, casting a warm flickering light on nearby surfaces, with dark smoke drifting slowly up from them."
+  },
+  "direction": {
+    "kind": "wind",
+    "angle": 0,
+    "strength": 0,
+    "label": "Wind",
+    "noun": "flames and smoke"
+  }
+}

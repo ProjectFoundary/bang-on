@@ -1,0 +1,87 @@
+{
+  "id": "smoke_plume",
+  "name": "Smoke plume (black)",
+  "category": "Smoke",
+  "status": "proven",
+  "default_where": "the marked spot",
+  "description": "Thick black smoke that starts as a puff and rises into a growing column.",
+  "phases": [
+    {
+      "phase": "before",
+      "label": "Clean",
+      "offset": -2
+    },
+    {
+      "phase": "start",
+      "label": "Puff",
+      "offset": 0,
+      "stamp": "puff.png",
+      "anchor": [
+        0.5,
+        0.95
+      ],
+      "scale": 0.1,
+      "opacity": 0.8
+    },
+    {
+      "phase": "rising",
+      "label": "Rising",
+      "offset": 12,
+      "stamp": "column.png",
+      "anchor": [
+        0.5,
+        0.98
+      ],
+      "scale": 0.35
+    },
+    {
+      "phase": "growing",
+      "label": "Growing",
+      "offset": 24,
+      "stamp": "column.png",
+      "anchor": [
+        0.5,
+        0.98
+      ],
+      "scale": 0.48
+    },
+    {
+      "phase": "column",
+      "label": "Column",
+      "offset": 36,
+      "stamp": "column.png",
+      "anchor": [
+        0.5,
+        0.98
+      ],
+      "scale": 0.6,
+      "persist": true
+    }
+  ],
+  "looks": [
+    {
+      "file": "look_smoke.png",
+      "text": "A close-up texture swatch of thick black smoke: colour and detail only. It is not an object to place in the shot and says nothing about its shape or direction."
+    }
+  ],
+  "prompt": {
+    "subject": "thick black smoke rising slowly from {where}",
+    "timing": "black smoke starts puffing from {where} at {start}, rising by {rising} and billowing wider by {growing}, a broad plume spreading out overhead by {column}",
+    "action": "At {start} thick black smoke starts pouring out of {where}. It drifts upward slowly at its own natural pace, billowing and rolling outward, widening as it climbs and thinning into a broad, soft haze that spreads out overhead. It is never a tight, fast column.",
+    "sound": "a low rumble of fire",
+    "subject_wind": "a plume of thick black smoke pouring from {where}",
+    "action_wind": "At {start} thick black smoke starts pouring out of {where} at its own slow natural pace and is caught by the wind as soon as it leaves the source, stretching into a long, widening trail that billows and thins as it drifts.",
+    "timing_wind": "black smoke starts pouring from {where} at {start}, streaming away on the wind by {rising}, a longer trail by {growing} and a long wind-blown plume by {column}",
+    "timing_preroll": "thick black smoke is already pouring from {where} when the shot begins, slowly rising, billowing wider and spreading out overhead throughout",
+    "action_preroll": "From the very first frame thick black smoke is already pouring out of {where} and has been for a while: a broad plume drifting slowly upward, billowing outward, widening as it climbs and thinning into a soft haze overhead. It keeps coming at the same slow natural pace throughout.",
+    "timing_preroll_wind": "thick black smoke is already pouring from {where} when the shot begins, streaming away on the wind in a long, widening, slowly drifting trail throughout",
+    "action_preroll_wind": "From the very first frame thick black smoke is already pouring out of {where} and streaming away on the wind in a long trail that widens, billows and thins as it drifts, at the same slow natural pace throughout."
+  },
+  "direction": {
+    "kind": "wind",
+    "angle": 0,
+    "strength": 0,
+    "label": "Wind",
+    "noun": "smoke"
+  }
+}

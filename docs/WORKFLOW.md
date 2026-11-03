@@ -1,0 +1,29 @@
+# Direct first, generate second
+
+## Plate and interaction
+
+Import a Keep original footage shot. Original encoded uploads remain stored. Supported native timing, dimensions and colour metadata are retained by the working pipeline; the explicit legal-range RGB option clips otherwise unrepresentable out-of-range RGB. See the import notice for the chosen path.
+
+You may provide mattes/depth or generate them through the configured backend. A **holdout** controls visibility. A **collider** changes simulated flow. An object can do either or both, independently per effect. 2D matte mode needs no depth. Depth 3D reconstructs approximate finite surfaces from depth and selected objects; it is not a calibrated moving mesh solve.
+
+## Local simulation and guide
+
+Choose an effect, click to place it, and adjust size, timing, direction, wind and lighting. Smoke density changes optical thickness; brightness changes simulated illumination. Review the action locally before submitting a model job. Source tracking is independent of which mattes collide with the effect.
+
+Prepare guide captures the isolated element on black and its independent geometric visibility. Painted guides use broad shading regions, temporal blending and configurable sparse cadence. Inspect the processed Guide link. Preparing or downloading a simulation preview is local and does not submit a model generation.
+
+## RGB and alpha
+
+Generate the selected element to run LTX Fluid RGB, then a separate AlphaGen pass. Inspect both outputs. Approval is explicit and pins that version; reruns create another version. Unknown/failed submissions are retained for inspection and are not automatically retried as new paid jobs.
+
+Changing simulation or guide settings invalidates the affected generation. Cached finishing controls can reuse the existing generated assets. Review final images after editing matte multiply/erosion/blur, opacity, exposure, original body/generated edge blend, optical holdout softness or glow.
+
+## Finish
+
+The original plate is the base for composites. Black-backed RGB is treated according to its stored association; it is not multiplied by alpha a second time. Optical visibility remains independent from the original simulation alpha so generated edge wisps can survive.
+
+Optional MiniMax interaction lighting generates a separate signed light/shadow difference. It uses references and can introduce artifacts; inspect before enabling it. A new lighting generation uses backend resources; adjusting a cached pass does not rerun it.
+
+For muzzle flashes, select the exact firing frames and set a simple placement/direction/size layout. Frame image edits and localized lighting are transferred back into the native shot. Model availability and the local muzzle allowance gate generation.
+
+Build the final take after reviewing/approving the intended elements. Download the composite or use layer export for native-timed float OpenEXR RGBA and manifests. [Export options](EXPORT_OPTIONS.md) describes association, colour and remaining adapter limits.

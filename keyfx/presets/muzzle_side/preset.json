@@ -1,0 +1,65 @@
+{
+  "id": "muzzle_side",
+  "name": "Muzzle flash (side-on)",
+  "category": "Gunfire",
+  "status": "proven",
+  "default_where": "the muzzle of the gun",
+  "description": "A single one-frame muzzle flash seen from the side, then a faint wisp of gun smoke. Flip it to fire left.",
+  "phases": [
+    {
+      "phase": "before",
+      "label": "Clean",
+      "offset": -2
+    },
+    {
+      "phase": "flash",
+      "label": "Flash",
+      "offset": 0,
+      "stamp": "flash.png",
+      "anchor": [
+        0.03,
+        0.5
+      ],
+      "scale": 0.08,
+      "glow": 0.5,
+      "glow_radius": 1.2,
+      "hard": true
+    },
+    {
+      "phase": "smoke",
+      "label": "Smoke wisp",
+      "offset": 2,
+      "stamp": "smoke.png",
+      "anchor": [
+        0.3,
+        0.6
+      ],
+      "scale": 0.07,
+      "opacity": 0.45
+    },
+    {
+      "phase": "clear",
+      "label": "Clear",
+      "offset": 8
+    }
+  ],
+  "looks": [
+    {
+      "file": "look_flash.png",
+      "text": "A close view of a muzzle flash: flame shape and colour only."
+    }
+  ],
+  "prompt": {
+    "subject": "a gunshot muzzle flash at {where}",
+    "timing": "a single bright muzzle flash bursts from {where} at {flash}, leaving a faint wisp of smoke that is gone by {clear}",
+    "action": "At {flash} the gun fires: a single brief white-yellow muzzle flash lasting one frame bursts from {where}, lighting the shooter's hands and face for an instant, followed by a faint wisp of gun smoke that quickly disappears.",
+    "sound": "a single sharp gunshot"
+  },
+  "direction": {
+    "kind": "barrel",
+    "angle": 90,
+    "strength": 1,
+    "label": "Barrel",
+    "noun": "muzzle flash"
+  }
+}
