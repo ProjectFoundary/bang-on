@@ -17,7 +17,7 @@ These are separate from synthetic automated tests. An isolated local data store 
 
 - An established moving plane plate was imported, an HQ smoke plume placed and its browser guide captured. Real Fluid RGB and AlphaGen were reviewed and approved, composited over the source and exported as native movies and float EXR layers.
 - Live smoke grenade, explosion, fire, ground hit and wall hit also completed RGB, alpha, approval, native movie and layer export.
-- Both Qwen and the optional Nano Banana muzzle paths completed. Only the selected firing frame changed in the native frame grid; other exported frames matched the imported source. Nano Banana remains optional.
+- Both Qwen and the optional Nano Banana muzzle paths completed. Only the selected firing frame changed in the native frame grid; other exported frames matched the imported source. Muzzle edits are baked into the combined native movie, not separate LTX EXR layers. Nano Banana remains optional.
 - Export checks decoded the complete movies, checked dimensions/frame counts, original upload hashes, ZIP CRCs, manifest frame grids and decoded EXR content. Each live source interval retained 96 native frames.
 - Preview-only HQ lighting checks changed key intensity, fill, rotation and elevation through the real interface. The captured volume RGB changed while alpha stayed byte-identical. No additional LTX runs were used for lighting comparisons. The rebuilt interface was reloaded for a final preview check.
 

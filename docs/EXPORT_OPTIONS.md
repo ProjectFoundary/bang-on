@@ -1,14 +1,10 @@
-# Current delivery — Bang On 0.2.0, 4 November 2026
+# Current delivery — Bang On v1.0.1
 
-The Export layers panel now writes a cached ZIP with selected combined float EXR,
-signed light/shadow differences and individual RGBA element sequences, with a
-manifest describing native timestamps, colour and alpha association. It does
-not submit generation. The original encoded upload remains separate and intact.
-The generated RGB/matte still has its original model resolution and 24fps detail.
-Nuke/After Effects adapters and ProRes element packages remain proposals.
+The Export layers panel writes a cached ZIP with the selected native combined movie and SDR preview, signed light/shadow EXRs, and individual float RGBA EXR sequences for LTX elements. The manifest describes native timestamps, colour and alpha association. Export does not submit generation. The original encoded upload remains separate and intact.
 
-The following 2 November audit describes the earlier state and design options;
-its statements that EXR packages are unavailable have been superseded.
+Muzzle image edits are baked into the final combined native movie. They do not have a separate RGBA EXR sequence. The generated LTX RGB and matte retain their original model resolution and 24 fps detail. Nuke/After Effects adapters and ProRes element packages remain proposals.
+
+The following 2 November audit records the earlier state and design options. Its statements about unavailable exports are historical.
 
 ---
 
