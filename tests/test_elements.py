@@ -67,13 +67,15 @@ def test_graphs_are_separate_native_ltx_passes_and_alpha_has_no_prompt():
     assert not any('MiniMax' in n['class_type'] for n in alpha.values())
 
 
-def test_alpha_transformer_override_reuses_rgb_cache_and_changes_only_matte_model(tmp_path):
+def test_full_bf16_alpha_profile_changes_only_matte_models_and_cache(tmp_path):
     original=graphs.normalize_recipe({'active_frames':9})
-    precise=graphs.normalize_recipe({'active_frames':9,'models':{'alpha_transformer':'alpha-bf16.safetensors'}})
+    precise=graphs.normalize_recipe({'active_frames':9,'models':graphs.ALPHA_BF16_MODELS})
     rgb,_,_=graphs.graph('rgb',Path('guide.mp4'),precise,width=64,height=64)
     alpha,_,_=graphs.graph('alpha',Path('beauty.mp4'),precise,width=64,height=64)
-    assert rgb['unet']['inputs']['unet_name']==graphs.DEFAULT_MODELS['transformer']
-    assert alpha['unet']['inputs']['unet_name']=='alpha-bf16.safetensors'
+    for node,field,role in [('unet','unet_name','transformer'),('clip','clip_name','text_encoder'),
+                            ('vae','vae_name','video_vae'),('avae','vae_name','audio_vae')]:
+        assert rgb[node]['inputs'][field]==graphs.DEFAULT_MODELS[role]
+        assert alpha[node]['inputs'][field]==graphs.ALPHA_BF16_MODELS[f'alpha_{role}']
     assert alpha['pos']['inputs']['text']==alpha['neg']['inputs']['text']==''
     assert elements._profile(original,'rgb')==elements._profile(precise,'rgb')
     assert elements._profile(original,'alpha')!=elements._profile(precise,'alpha')

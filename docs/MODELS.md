@@ -15,6 +15,8 @@ The original-plate element route uses LTX 2.5 with these defaults from `keyfx/el
 
 Fluid and AlphaGen use separate model chains. They are not stacked in one pass. API graph templates are included in `workflows/`; the application builds and snapshots the actual submitted graph and input hashes.
 
+For a difficult matte, **Advanced · Comfy models → Use full BF16 for AlphaGen** selects Lightricks' BF16 transformer, text encoder and VAEs for the alpha pass. RGB models remain unchanged, so an identical prepared guide can reuse its RGB output. Run the model readiness check before generating; the full profile requires more GPU memory. A live fire matte that failed with the default quantized profile passed with this configuration, with the same validation thresholds.
+
 Upstream setup and terms: [LTX 2.5](https://huggingface.co/Lightricks/LTX-2.5), [AInVFX Fluid](https://huggingface.co/AInVFX/ainvfx-fluid), [AlphaGen documentation](https://docs.ltx.io/open-source-model/vfx-post-production/alpha-gen), [Comfy Cloud model imports](https://docs.comfy.org/cloud/import-models).
 
 Optional depth reconstruction, object tracking, people alpha, image edits, MiniMax interaction lighting and the legacy H3 route have their own node/model requirements. The app lists the exact missing requirements for the selected operation. Nano Banana partner edits require Cloud access; Qwen/FLUX native routes need their corresponding weights. Access, licensing, inference cost and visual quality depend on your backend and chosen models.

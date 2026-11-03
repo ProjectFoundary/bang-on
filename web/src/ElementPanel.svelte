@@ -107,6 +107,14 @@
   function objectAdded(fresh:Project,effectId=selected?.id){if(fresh.id!==project.id)return;const live=project.effects.find(e=>e.id===effectId),saved=fresh.effects.find(e=>e.id===effectId);if(live&&saved?.element){live.element={...defaults,...live.element};live.element.colliders=[...saved.element.colliders];}onupdated(fresh);}
   async function check(){const key=modelProfileKey;await work('model','Checking models…',async()=>{capabilities=await elementRequest(`/api/projects/${project.id}/elements/capabilities`);capabilitiesKey=key;});}
   function modelSetting(role:string,value:string,revision=false){const key=revision?'element_model_revisions':'element_models',map={...project.settings[key]};if(value.trim())map[role]=value.trim();else delete map[role];project.settings[key]=map;capabilities=null;onchange();}
+  function selectAlphaBf16(){
+    const profile=project.element_alpha_bf16_models;if(!profile)return;
+    const revisions={...project.settings.element_model_revisions};
+    for(const role of Object.keys(profile))delete revisions[role];
+    project.settings.element_model_revisions=revisions;
+    project.settings.element_models={...project.settings.element_models,...profile};
+    capabilities=null;onchange();
+  }
 </script>
 
 {#if selected}
@@ -281,7 +289,16 @@
   <div class="block"><p class="small muted">Choose an effect and click the plate to place it. Its interaction, simulation and generation steps will appear here.</p></div>
 {/if}
 
-<div class="block"><details><summary>Advanced · Comfy models</summary><div class="adv"><button disabled={disabled||!!working||!configured} onclick={check}>Check Fluid + AlphaGen models</button>{#if capabilities}<pre class="small">{JSON.stringify(capabilities,null,2)}</pre>{/if}{#if errors.model}<p class="inline-error" role="alert">{errors.model}</p>{/if}<p class="small muted">Connection and model readiness are separate. Both required model stages must be available before a beauty render can start.</p><details><summary>Installed model names / revisions</summary><fieldset class="adv" disabled={disabled||!!working}>{#each Object.entries(project.element_model_defaults??{}) as [role,name]}<label>{role}<input placeholder={name} value={project.settings.element_models?.[role]??''} onchange={e=>modelSetting(role,e.currentTarget.value)}/></label><label class="small">Declared revision / hash<input value={project.settings.element_model_revisions?.[role]??''} onchange={e=>modelSetting(role,e.currentTarget.value,true)}/></label>{/each}</fieldset></details></div></details></div>
+<div class="block"><details><summary>Advanced · Comfy models</summary><div class="adv">
+  <button disabled={disabled||!!working||!configured} onclick={check}>Check Fluid + AlphaGen models</button>
+  {#if capabilities}<pre class="small">{JSON.stringify(capabilities,null,2)}</pre>{/if}{#if errors.model}<p class="inline-error" role="alert">{errors.model}</p>{/if}
+  <p class="small muted">Connection and model readiness are separate. Both required model stages must be available before a beauty render can start.</p>
+  {#if project.element_alpha_bf16_models}
+    <button disabled={disabled||!!working} aria-pressed={Object.entries(project.element_alpha_bf16_models).every(([role,name])=>project.settings.element_models?.[role]===name)} onclick={selectAlphaBf16}>Use full BF16 for AlphaGen</button>
+    <p class="small muted">Try the full-precision models if AlphaGen returns colour. Check model availability and GPU memory first. This leaves the RGB model settings unchanged.</p>
+  {/if}
+  <details><summary>Installed model names / revisions</summary><fieldset class="adv" disabled={disabled||!!working}>{#each Object.entries(project.element_model_defaults??{}) as [role,name]}<label>{role}<input placeholder={name} value={project.settings.element_models?.[role]??''} onchange={e=>modelSetting(role,e.currentTarget.value)}/></label><label class="small">Declared revision / hash<input value={project.settings.element_model_revisions?.[role]??''} onchange={e=>modelSetting(role,e.currentTarget.value,true)}/></label>{/each}</fieldset></details>
+</div></details></div>
 
 <style>
   .block{display:grid;gap:14px;padding:18px;border-bottom:1px solid var(--line)}h2,h3,p{margin:0}h3{font-size:12px;font-weight:600}.adv,.step-body{display:grid;gap:12px;padding-top:14px}fieldset{border:0;padding:0;margin:0;min-width:0;display:grid;gap:12px}input[type=file]{max-width:100%;font-size:11px}pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto}.row>label{min-width:0}summary{display:list-item;list-style:disclosure-closed;padding-left:2px}details[open]>summary{list-style:disclosure-open}.interaction-step>summary strong{font-size:12px;font-weight:600}.interaction-step>summary strong>span{font-weight:400;margin-left:6px}.interaction-step>summary>span{float:right;white-space:nowrap}.setup-card{display:grid;gap:12px;padding:12px;background:var(--panel2);border:1px solid var(--line);border-radius:9px}.setup-card>.adv{padding-top:0}.setup-notice{padding:9px 10px;background:var(--panel3);border-radius:6px}.inline-error{font-size:12px;color:var(--danger);line-height:1.5;overflow-wrap:anywhere}.job-status{display:grid;gap:8px;font-size:11px;padding:10px;border:1px solid var(--line);border-radius:6px}.job-status.failed{border-color:var(--danger);color:var(--danger)}.job-status progress{width:100%;accent-color:var(--accent)}.ready{color:var(--accent2)}.assigned-objects{display:grid;gap:12px}.check{display:flex;align-items:center;gap:8px;line-height:1.5}.check input{margin:0;flex:none}.check .chip{margin-left:auto}.matte-settings{padding-left:8px}.matte-preview{display:grid;grid-template-columns:1fr 1fr;gap:8px}.matte-preview figure{margin:0;min-width:0;overflow:hidden;background:#111;border-radius:5px}.matte-preview img{display:block;width:100%;height:auto}.matte-preview figcaption{padding:5px;font-size:10px;color:var(--muted)}.point-picker{position:relative;display:block;padding:0;width:100%;overflow:hidden;cursor:crosshair}.point-picker img{display:block;width:100%;height:auto}.point{position:absolute;width:12px;height:12px;transform:translate(-50%,-50%);background:var(--accent);border:2px solid var(--bg);border-radius:50%;pointer-events:none}.take-row{display:grid;gap:9px;padding:12px;border:1px solid var(--line);border-radius:8px}.take-links{display:flex;gap:14px;font-size:11px}.take-row .row{flex-wrap:wrap}

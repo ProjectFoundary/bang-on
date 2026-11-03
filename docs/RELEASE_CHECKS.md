@@ -16,14 +16,14 @@ Release preparation: 4 November 2026. The repository URL and approved 1:43 demo 
 These are separate from synthetic automated tests. An isolated local data store and an existing Comfy Cloud connection were used; credentials, project files, provider receipts and private source footage are excluded from Git and release assets.
 
 - An established moving plane plate was imported, an HQ smoke plume placed and its browser guide captured. Real Fluid RGB and AlphaGen were reviewed and approved, composited over the source and exported as native movies and float EXR layers.
-- Live smoke grenade, explosion, ground hit and wall hit also completed RGB, alpha, approval, native movie and layer export.
+- Live smoke grenade, explosion, fire, ground hit and wall hit also completed RGB, alpha, approval, native movie and layer export.
 - Both Qwen and the optional Nano Banana muzzle paths completed. Only the selected firing frame changed in the native frame grid; other exported frames matched the imported source. Nano Banana remains optional.
 - Export checks decoded the complete movies, checked dimensions/frame counts, original upload hashes, ZIP CRCs, manifest frame grids and decoded EXR content. Each live source interval retained 96 native frames.
 - Preview-only HQ lighting checks changed key intensity, fill, rotation and elevation through the real interface. The captured volume RGB changed while alpha stayed byte-identical. No additional LTX runs were used for lighting comparisons. The rebuilt interface was reloaded for a final preview check.
 
 The first smoke result included unrelated scenery. The revised positive isolation prompt produced smoke and the other intended effects. Generated visual quality still needs artist review.
 
-**Remaining live issue:** fire RGB generated successfully, but several AlphaGen seeds returned coloured content or exceeded the verified near-gray tolerance. These versions stayed unapproved. A BF16 transformer comparison did not resolve it. Validation limits were not relaxed. The separate AlphaGen seed control permits an explicit new matte variation while retaining reusable RGB; it does not guarantee model success. Fire was tested, but a passing live fire matte/export is not claimed for this session.
+**Fire recovery:** the default quantized AlphaGen profile produced coloured output or exceeded the near-gray tolerance on both tested fire references. A BF16 transformer alone did not resolve it. The full BF16 transformer, text encoder and VAE profile produced a valid matte on the original fire case, with zero pixels above the normal chroma limit in the diagnostic. The integrated app run reused its RGB, passed the unchanged validation, and completed native movie and EXR export. The full profile is an explicit option because it needs more GPU memory. It is not a guarantee for every generated clip.
 
 ## Privacy and remaining limits
 

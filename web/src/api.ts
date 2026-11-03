@@ -67,6 +67,7 @@ export type Project = {
   location_frame?: number; locations?: LocationVersion[];
   native_profile?:{width:number;height:number;fps:number;fps_rational:string;timestamps:number[];storage_bit_depth:number;colour:Record<string,string>;duration:number;working_copy_warning?:string|null;rgb_range_policy?:'preserve'|'legalize'};
   element_model_defaults?:Record<string,string>;
+  element_alpha_bf16_models?:Record<string,string>;
   geometry?:{reference_frame:number;focal_pixels:number;depth_scale:number;depth_bias:number;collision_mode?:'matte2d'|'depth3d';depth:unknown;mattes:any[]};
   element_takes?:{id:string;effect_id:string;status:string;current:boolean;approved?:boolean;approval_outdated?:boolean;needs_alpha_core?:boolean;backend_current?:boolean;created:string;error?:string;assets?:any;plan?:any;recoverable_stages?:{stage:'rgb'|'alpha';raw_sha256:string;job:string;output_filename:string;error_detail?:string}[];local_recovery?:{stage:string;raw_sha256:string;new_inference_submissions:number;recovered_at:number}}[];
   element_approvals?:Record<string,string>;

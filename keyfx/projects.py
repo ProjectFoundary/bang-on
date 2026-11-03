@@ -282,7 +282,9 @@ def public(p: dict) -> dict:
     for take in q['people_alpha_takes']:
         take['approved_mattes'] = [m['id'] for m in p.get('geometry',{}).get('mattes',[]) if m.get('holdout',{}).get('take_id') == take['id']]
     q['element_model_defaults'] = {**element_graphs.DEFAULT_MODELS,
-                                   'alpha_transformer': element_graphs.DEFAULT_MODELS['transformer']}
+                                   **{f'alpha_{role}': element_graphs.DEFAULT_MODELS[role]
+                                      for role in element_graphs.ALPHA_MODEL_ROLES}}
+    q['element_alpha_bf16_models'] = dict(element_graphs.ALPHA_BF16_MODELS)
     q.setdefault('geometry', geometry.defaults())
     q['render_timing'] = {'source_frames': p['frames'], 'generated_frames': p['frames'] if element_jobs.enabled(p) else render_length(p['frames']),
                           'padding_frames': 0 if element_jobs.enabled(p) else render_length(p['frames']) - p['frames'], 'fps': p.get('native_profile', {}).get('fps', FPS)}

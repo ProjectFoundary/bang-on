@@ -242,9 +242,12 @@ def _profile(r: dict, stage: str) -> dict:
     names = ['transformer', 'text_encoder', 'video_vae', 'audio_vae', 'alpha' if stage == 'alpha' else 'fluid']
     models = {n: r['models'][n] for n in names}
     revisions = {n: r['model_revisions'].get(n) for n in names}
-    if stage == 'alpha' and 'alpha_transformer' in r['models']:
-        models['transformer'] = r['models']['alpha_transformer']
-        revisions['transformer'] = r['model_revisions'].get('alpha_transformer')
+    if stage == 'alpha':
+        for role in graphs.ALPHA_MODEL_ROLES:
+            override = f'alpha_{role}'
+            if override in r['models']:
+                models[role] = r['models'][override]
+                revisions[role] = r['model_revisions'].get(override)
     return {'profile': r['profile'], 'models': models,
             'model_revisions': revisions,
             'fps': r['gen_fps'], 'active_frames': r['active_frames'], 'model_frames': r['model_frames'],

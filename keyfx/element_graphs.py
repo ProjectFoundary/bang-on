@@ -24,6 +24,13 @@ DEFAULT_MODELS = {
     'fluid': 'AInVFX__ainvfx-fluid__ainvfx-fluid.safetensors',
     'alpha': 'Lightricks__LTX-25-22b-IC-LoRA-Alpha-Gen__ltx-2.5-22b-ic-lora-alpha-gen-0.9.safetensors',
 }
+ALPHA_MODEL_ROLES = ('transformer', 'text_encoder', 'video_vae', 'audio_vae')
+ALPHA_BF16_MODELS = {
+    'alpha_transformer': 'ltx-2.5-22b-distilled-transformer-bf16.safetensors',
+    'alpha_text_encoder': 'gemma4-12b-with-proj-ltx-2.5-bf16.safetensors',
+    'alpha_video_vae': 'ltx-2.5-video-vae-bf16.safetensors',
+    'alpha_audio_vae': DEFAULT_MODELS['audio_vae'],
+}
 DEFAULT_PROMPT = ('ainvfxfluid, a single isolated smoke or dust element following the guided '
                   'volume and motion, with shaded billowing detail, on a uniformly pure black '
                   'background, fixed camera, no room or photographed scenery')
@@ -60,7 +67,7 @@ def normalize_recipe(value: dict | None = None) -> dict:
     if not isinstance(overrides, dict):
         raise ValueError('Choose model names by element model role.')
     models = {**DEFAULT_MODELS, **overrides}
-    if (set(models) - (set(DEFAULT_MODELS) | {'alpha_transformer'})
+    if (set(models) - (set(DEFAULT_MODELS) | {f'alpha_{role}' for role in ALPHA_MODEL_ROLES})
             or any(not isinstance(v, str) or not v.strip() for v in models.values())):
         raise ValueError('Select the transformer, text/audio/video VAE, Fluid and Alpha Gen model files.')
     prompt = r.get('prompt', DEFAULT_PROMPT)
@@ -105,11 +112,13 @@ def graph(stage: str, video: Path, recipe: dict, *, width: int, height: int,
         raise ValueError('Element canvas must be /64 and fit1920×1088 (portrait supported).')
     m = r['models']
     alpha = stage == 'alpha'
+    if alpha:
+        m = {**m, **{role: m.get(f'alpha_{role}', m[role]) for role in ALPHA_MODEL_ROLES}}
     # The passes have separate model chains: do not stack Fluid and Alpha Gen.
     g = {
         'control': _n('LoadVideo', file='element.mp4'),
         'control_frames': _n('GetVideoComponents', video=['control', 0]),
-        'unet': _n('UNETLoader', unet_name=m.get('alpha_transformer', m['transformer']) if alpha else m['transformer'], weight_dtype='default'),
+        'unet': _n('UNETLoader', unet_name=m['transformer'], weight_dtype='default'),
         'lora': _n('LTXICLoRALoaderModelOnly', model=['unet', 0], lora_name=m['alpha' if alpha else 'fluid'], strength_model=1.0),
         'clip': _n('CLIPLoader', clip_name=m['text_encoder'], type='ltxv', device='default'),
         'vae': _n('VAELoader', vae_name=m['video_vae']),
