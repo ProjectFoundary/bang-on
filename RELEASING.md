@@ -20,6 +20,8 @@ git push origin main
 
 The initial release excludes private development history. Future commits should continue from this public history. No model-generation keys belong in repository settings or release assets.
 
-## Optional GitHub Actions
+## GitHub Actions
 
-The tested check commands are supplied as `tools/github-checks.yml`. To enable hosted CI, copy it to `.github/workflows/checks.yml` and push with GitHub credentials permitted to write workflows. The initial publisher credential lacks that scope, so v1 ships the configuration as a template. Local release checks are recorded in [docs/RELEASE_CHECKS.md](docs/RELEASE_CHECKS.md).
+The build and test workflow at `.github/workflows/checks.yml` runs on pushes to `main`, pull requests and manual dispatch. It checks and builds the interface, runs the backend tests and builds the release wheel. It uses read-only repository permissions and does not require model-provider credentials or paid inference.
+
+Editing workflow files requires GitHub credentials with workflow-write permission. Local release checks are recorded in [docs/RELEASE_CHECKS.md](docs/RELEASE_CHECKS.md), and hosted run results are available on [Actions](https://github.com/ProjectFoundary/bang-on/actions).

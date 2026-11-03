@@ -35,4 +35,4 @@ uv build --wheel
 
 For installed-package acceptance, copy `tools/check_installed_release.py` outside the source checkout and run it with the installed environment's Python `-I` and an `--output` path. It blocks external network access and substitutes only the model transport.
 
-GitHub Actions is supplied as an optional template at `tools/github-checks.yml`; hosted CI has not run for v1 because the publishing credential does not have workflow-write permission. The verification above was performed locally.
+The original v1.0.0 tag shipped GitHub Actions as a template because the initial publishing credential lacked workflow-write permission. GitHub Actions is now enabled on `main` through `.github/workflows/checks.yml`. Hosted run results are available on [Actions](https://github.com/ProjectFoundary/bang-on/actions); the release verification recorded above was performed locally.
