@@ -51,11 +51,17 @@ def normalize_recipe(value: dict | None = None) -> dict:
     seed = r.get('seed', 42)
     if isinstance(seed, bool) or not isinstance(seed, int) or not 0 <= seed < 2**63:
         raise ValueError('Enter a non-negative integer seed below2^63.')
+    alpha_seed = r.get('alpha_seed', seed)
+    if isinstance(alpha_seed, bool) or not isinstance(alpha_seed, int) or not 0 <= alpha_seed < 2**63:
+        raise ValueError('Enter a non-negative AlphaGen seed below2^63.')
+    if 'alpha_seed' in r:
+        r['alpha_seed'] = alpha_seed
     overrides = r.get('models', {})
     if not isinstance(overrides, dict):
         raise ValueError('Choose model names by element model role.')
     models = {**DEFAULT_MODELS, **overrides}
-    if set(models) != set(DEFAULT_MODELS) or any(not isinstance(v, str) or not v.strip() for v in models.values()):
+    if (set(models) - (set(DEFAULT_MODELS) | {'alpha_transformer'})
+            or any(not isinstance(v, str) or not v.strip() for v in models.values())):
         raise ValueError('Select the transformer, text/audio/video VAE, Fluid and Alpha Gen model files.')
     prompt = r.get('prompt', DEFAULT_PROMPT)
     if not isinstance(prompt, str) or not prompt.strip() or len(prompt) > 12000:
@@ -103,7 +109,7 @@ def graph(stage: str, video: Path, recipe: dict, *, width: int, height: int,
     g = {
         'control': _n('LoadVideo', file='element.mp4'),
         'control_frames': _n('GetVideoComponents', video=['control', 0]),
-        'unet': _n('UNETLoader', unet_name=m['transformer'], weight_dtype='default'),
+        'unet': _n('UNETLoader', unet_name=m.get('alpha_transformer', m['transformer']) if alpha else m['transformer'], weight_dtype='default'),
         'lora': _n('LTXICLoRALoaderModelOnly', model=['unet', 0], lora_name=m['alpha' if alpha else 'fluid'], strength_model=1.0),
         'clip': _n('CLIPLoader', clip_name=m['text_encoder'], type='ltxv', device='default'),
         'vae': _n('VAELoader', vae_name=m['video_vae']),
@@ -118,7 +124,7 @@ def graph(stage: str, video: Path, recipe: dict, *, width: int, height: int,
                     latent_downscale_factor=1.0 if alpha else ['lora', 1], crop='disabled',
                     use_tiled_encode=False, tile_size=256, tile_overlap=64),
         'audio': _n('LTXVEmptyLatentAudio', frames_number=r['model_frames'], frame_rate=GEN_FPS, batch_size=1, audio_vae=['avae', 0]),
-        'noise': _n('RandomNoise', noise_seed=r['seed']),
+        'noise': _n('RandomNoise', noise_seed=r.get('alpha_seed', r['seed']) if alpha else r['seed']),
         'guider': _n('CFGGuider', model=['lora', 0], positive=['guide', 0], negative=['guide', 1], cfg=1.0),
         'sampler': _n('KSamplerSelect', sampler_name='euler_ancestral'),
         'sigmas': _n('ManualSigmas', sigmas=SIGMAS),

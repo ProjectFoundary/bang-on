@@ -6,7 +6,7 @@ const kinds=new Set(['explosion','fire','smoke_white','smoke_plume','smoke_plume
 export const isSmokePreset=(kind:string)=>['smoke_white','smoke_plume','smoke_plume_hq','smoke_grenade'].includes(kind);
 export const isGrenadeSmokePreset=(kind:string)=>kind==='smoke_grenade'||kind==='smoke_white';
 export const volumeKind=(effect:Effect):string|null=>kinds.has(effect.preset)?effect.preset:null;
-export const elementDefaults={duration_s:2,cadence:10,frame_blend:10,guide_style:'painted' as 'painted'|'rendered',guide_displacement:0,guide_displacement_blur:32,light_intensity:1,fill_intensity:1,rim_width:16,rim_strength:0,light_rotation:0,light_elevation:60,blur:2,shading:1,seed:42,opacity:1,gain:1,light:0,shadow:0,depth_offset:0,colliders:[] as string[],wind_dispersion:1,smoke_dispersion:0,density:1,brightness:1};
+export const elementDefaults={duration_s:2,cadence:10,frame_blend:10,guide_style:'painted' as 'painted'|'rendered',guide_displacement:0,guide_displacement_blur:32,light_intensity:1,fill_intensity:1,rim_width:16,rim_strength:0,light_rotation:0,light_elevation:60,blur:2,shading:1,seed:42,alpha_seed:1234,opacity:1,gain:1,light:0,shadow:0,depth_offset:0,colliders:[] as string[],wind_dispersion:1,smoke_dispersion:0,density:1,brightness:1};
 export function elementSettings(effect:Effect){
   const saved=effect.element,legacy=!!saved&&saved.cadence!==undefined&&saved.frame_blend===undefined&&saved.guide_style===undefined;
   return {...elementDefaults,...(legacy?{cadence:1,frame_blend:1,guide_style:'rendered' as const,light_elevation:effect.preset==='smoke_plume_hq'?40:60}:{}),...saved};

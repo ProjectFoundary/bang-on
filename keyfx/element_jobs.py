@@ -26,7 +26,7 @@ DEPTH_HOLDOUT_VISIBILITY_PROFILE = 'camera-depth-pixel-foreground-v3'
 SIMULATION_PROFILES = {'smoke_plume_hq':'squib-plume-hq-r18-v1', 'smoke_grenade':'bang-smoke-grenade-v1', 'fire':'squib-groundfire-v1'}
 DEFAULT = {'duration_s': 2., 'cadence': 10, 'frame_blend': 10, 'guide_style': 'painted', 'guide_displacement': 0., 'guide_displacement_blur': 32., 'light_intensity': 1., 'light_rotation': 0., 'light_elevation': 60., 'blur': 2., 'shading': 1., 'seed': 42,
            'opacity': 1., 'gain': 1., 'light': 0., 'shadow': 0., 'depth_offset': 0., 'colliders': [], 'wind_dispersion': 1.,
-           'density': 1., 'brightness': 1., 'smoke_dispersion': 0., 'fill_intensity': 1., 'rim_width': 16., 'rim_strength': 0., **matte_treatment.DEFAULT, **element_finishing.DEFAULT}
+           'density': 1., 'brightness': 1., 'smoke_dispersion': 0., 'fill_intensity': 1., 'rim_width': 16., 'rim_strength': 0., 'alpha_seed': 1234, **matte_treatment.DEFAULT, **element_finishing.DEFAULT}
 
 
 def digest(data): return element_graphs.digest(data)
@@ -62,6 +62,7 @@ def effect_config(p, e):
             raise ValueError(f'Choose an integer {key} between1and{limit}.')
     if o['guide_style'] not in ('painted', 'rendered'): raise ValueError('Choose painted or rendered guides.')
     if isinstance(o['seed'], bool) or not isinstance(o['seed'], int) or not 0 <= o['seed'] < 2**63: raise ValueError('Invalid element seed.')
+    if isinstance(o['alpha_seed'], bool) or not isinstance(o['alpha_seed'], int) or not 0 <= o['alpha_seed'] < 2**63: raise ValueError('Invalid AlphaGen seed.')
     if (not isinstance(o['colliders'], list) or any(not isinstance(mid,str) for mid in o['colliders'])
             or len(o['colliders']) != len(set(o['colliders']))):
         raise ValueError('Choose unique named collider/holdout mattes.')
@@ -107,6 +108,7 @@ def generation_signature(p, e):
     ):
         fields['holdout_visibility_profile'] = DEPTH_HOLDOUT_VISIBILITY_PROFILE
     sim = {k: v for k, v in cfg.items() if k not in ('opacity', 'gain', 'light', 'shadow','alpha_support', *matte_treatment.FIELDS, *element_finishing.FIELDS)}
+    if sim['alpha_seed'] == 1234: sim.pop('alpha_seed')
     # Defaults preserve the signatures of existing guides. Appearance affects
     # only smoke guides; these controls are not final-composite gain/opacity.
     for key in ('density', 'brightness'):
@@ -431,11 +433,17 @@ def _recipe(p, e, spec):
                'wall_hit': 'a short localized impact ejects dusty plaster chips and a fine expanding dust cloud',
                'dirt_hit': 'a ground impact kicks up shaded dirt and dust, then it settles',
                'fire': 'a continuous ground fire catches and keeps burning with tall flickering orange flames, fed by a fixed source and releasing wisps of smoke, with no explosive fireball'}
-    return {'active_frames': spec['active_frames'], 'seed': spec['settings']['seed'],
+    subject = prompts[e['preset']]
+    return {'active_frames': spec['active_frames'], 'seed': spec['settings']['seed'], 'alpha_seed': spec['settings'].get('alpha_seed', 1234),
             'start_frame': spec['start_frame'], 'start_time_seconds': spec['start_time'],
             'source_fps': source_profile(p)['fps_rational'], 'source_window': spec['source_frames'],
-            'prompt': 'ainvfxfluid, '+prompts[e['preset']]+', following the shaded motion guide, on pure black. No photographed room, people, furniture or scenery.'
+            'prompt': ('ainvfxfluid, an isolated VFX element on a uniformly pure black background: '+subject+'. '
+                       'The supplied painted video is the authority for the effect silhouette, screen position, scale, timing and lighting. '
+                       'Replace its flat painted regions with natural volumetric detail while retaining those guided shapes and motion. '
+                       'The frame contains only this effect surrounded by empty black. The camera stays locked for one continuous shot.')
                       + painted_guides.lighting_prompt(spec['settings'],base_azimuth=120 if e['preset']=='smoke_plume_hq' else -25),
+            'negative_prompt': ('blurry, low quality, distorted, watermark, text, people, person, human, cyclist, bicycle, '
+                                'vehicles, aircraft, airplane, furniture, room, architecture, trees, forest, scenery, landscape'),
             'models': p.get('settings', {}).get('element_models', {}),
             'model_revisions': p.get('settings', {}).get('element_model_revisions', {}),
             'colour_association': 'black_premultiplied'}

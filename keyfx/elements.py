@@ -240,10 +240,16 @@ def fetch_capabilities(recipe: dict, *, connection: connections.Connection | Non
 
 def _profile(r: dict, stage: str) -> dict:
     names = ['transformer', 'text_encoder', 'video_vae', 'audio_vae', 'alpha' if stage == 'alpha' else 'fluid']
-    return {'profile': r['profile'], 'models': {n: r['models'][n] for n in names},
-            'model_revisions': {n: r['model_revisions'].get(n) for n in names},
+    models = {n: r['models'][n] for n in names}
+    revisions = {n: r['model_revisions'].get(n) for n in names}
+    if stage == 'alpha' and 'alpha_transformer' in r['models']:
+        models['transformer'] = r['models']['alpha_transformer']
+        revisions['transformer'] = r['model_revisions'].get('alpha_transformer')
+    return {'profile': r['profile'], 'models': models,
+            'model_revisions': revisions,
             'fps': r['gen_fps'], 'active_frames': r['active_frames'], 'model_frames': r['model_frames'],
-            'seed': r['seed'], 'steps': r['steps'], 'cfg': r['cfg'], 'sampler': r['sampler'], 'sigmas': r['sigmas'],
+            'seed': r.get('alpha_seed', r['seed']) if stage == 'alpha' else r['seed'],
+            'steps': r['steps'], 'cfg': r['cfg'], 'sampler': r['sampler'], 'sigmas': r['sigmas'],
             **({'prompt': r['prompt'], 'negative_prompt': r['negative_prompt'], 'colour_association': r['colour_association']}
                if stage == 'rgb' else {'prompt': '', 'reference_downscale_factor': 1.0})}
 

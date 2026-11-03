@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import shutil
 import tempfile
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import cv2
@@ -22,7 +23,13 @@ from pydantic import BaseModel
 from . import presets, projects, setdressing, image_models, people, room_refs, connections, native_media, element_jobs
 from .config import CH, CW, WEB_DIST
 
-app = FastAPI(title='Bang On')
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    _recover()
+    yield
+
+
+app = FastAPI(title='Bang On', lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=2000)
 from .element_api import router as element_router
 app.include_router(element_router)
@@ -47,6 +54,15 @@ async def same_origin_only(request: Request, call_next):
     name = host.rsplit(':', 1)[0] if not host.startswith('[') else host.split(']')[0] + ']'
     if name not in _LOCAL:
         return PlainTextResponse('host not allowed', status_code=403)
+    match = re.match(r'^/api/projects/([^/]+)(?:/|$)', request.url.path)
+    if match:
+        try:
+            projects.pdir(match.group(1))
+            render = re.match(r'^/api/projects/[^/]+/renders/([^/]+)(?:/|$)', request.url.path)
+            if render:
+                projects.validate_id(render.group(1), 'render')
+        except ValueError as exc:
+            return JSONResponse({'detail': str(exc)}, status_code=400)
     if request.method not in ('GET', 'HEAD', 'OPTIONS'):
         origin = request.headers.get('origin')
         if origin and urlparse(origin).netloc != host:
@@ -64,7 +80,6 @@ async def same_origin_only(request: Request, call_next):
     return response
 
 
-@app.on_event('startup')
 def _recover() -> None:
     from .bundled_examples import install_defaults
     install_defaults()
@@ -484,9 +499,14 @@ async def render(pid: str, request: Request):
 
 @app.get('/api/projects/{pid}/renders/{rid}/{name:path}')
 def render_file(pid: str, rid: str, name: str):
-    rd = (projects.pdir(pid) / 'renders' / rid).resolve()
+    try:
+        projects.validate_id(rid, 'render')
+        root = projects.pdir(pid)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from None
+    rd = (root / 'renders' / rid).resolve()
     f = (rd / name).resolve()
-    if rd not in f.parents or not f.is_file():
+    if not rd.is_relative_to(root) or rd not in f.parents or not f.is_file():
         raise HTTPException(404)
     return FileResponse(f)
 

@@ -5,6 +5,15 @@ import pytest
 from keyfx import alpha_core
 
 
+@pytest.mark.parametrize('shape', [(1, 8), (2, 2), (16, 16)])
+def test_opaque_masks_without_distance_seed_do_not_overflow(shape):
+    guide=np.full(shape,255,np.uint8)
+    with np.errstate(over='raise', invalid='raise', divide='raise'):
+        result=alpha_core.core_alpha(guide)
+    assert np.isfinite(result).all()
+    assert np.all((result>=0)&(result<=1))
+
+
 def test_eroded_blurred_core_recovers_dense_interior_without_hard_outline():
     guide = np.zeros((540, 600), np.uint8)
     guide[100:440, 100:500] = 255

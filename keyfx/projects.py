@@ -5,6 +5,7 @@ import json
 import copy
 import hashlib
 import os
+import re
 import shutil
 import threading
 import time
@@ -28,8 +29,19 @@ def _lock(pid: str) -> threading.Lock:
     return _locks.setdefault(pid, threading.Lock())
 
 
+def validate_id(value: str, kind: str = 'project') -> str:
+    """Identifiers are single ASCII path components, never user filenames."""
+    if not isinstance(value, str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,128}', value):
+        raise ValueError(f'Invalid {kind} ID.')
+    return value
+
+
 def pdir(pid: str) -> Path:
-    return DATA / 'projects' / pid
+    root = (DATA / 'projects').resolve()
+    path = (root / validate_id(pid)).resolve()
+    if not path.is_relative_to(root):
+        raise ValueError('Project directory is outside the project store.')
+    return path
 
 
 def load(pid: str) -> dict:
@@ -269,7 +281,8 @@ def public(p: dict) -> dict:
     q['people_alpha_takes'] = people_alpha.records(p)
     for take in q['people_alpha_takes']:
         take['approved_mattes'] = [m['id'] for m in p.get('geometry',{}).get('mattes',[]) if m.get('holdout',{}).get('take_id') == take['id']]
-    q['element_model_defaults'] = dict(element_graphs.DEFAULT_MODELS)
+    q['element_model_defaults'] = {**element_graphs.DEFAULT_MODELS,
+                                   'alpha_transformer': element_graphs.DEFAULT_MODELS['transformer']}
     q.setdefault('geometry', geometry.defaults())
     q['render_timing'] = {'source_frames': p['frames'], 'generated_frames': p['frames'] if element_jobs.enabled(p) else render_length(p['frames']),
                           'padding_frames': 0 if element_jobs.enabled(p) else render_length(p['frames']) - p['frames'], 'fps': p.get('native_profile', {}).get('fps', FPS)}

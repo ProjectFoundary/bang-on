@@ -1,16 +1,16 @@
 # v1 limitations
 
-This is the first public release. Inspect generated results before delivery.
+Version 1.0.1. Inspect generated results before delivery.
 
 - Local smoke/fire preview requires WebGL2 and a suitable browser/GPU. Performance varies by hardware; guide capture can run slower than playback.
 - Source imports can cover up to60seconds. Individual generated element windows are limited to about5seconds at24fps. Model sampling/resolution limit generated detail even when native source timing and output dimensions are retained.
 - Depth/camera reconstruction and generated-wisp depth ordering are approximate. A tracked silhouette/depth shell is not general animated mesh or SDF support.
 - The demo includes earlier art-directed CG experiments. Bundled editable plane/house scenes expose the current implementation and retain archived generated clips as references; exact motion/lighting parity with every archived shot is not guaranteed.
-- AlphaGen output can need matte adjustment. Fine hair, motion blur, smoky edges and occlusions require inspection. Source-preserving compositing does not make generated interaction physically exact.
+- AlphaGen can return a coloured reconstruction instead of a usable matte. Validation rejects such outputs without silently converting or automatically spending on retries. Change the separate AlphaGen seed in Advanced guide settings and prepare/generate a new version; unchanged RGB can be reused. AlphaGen output can also need matte adjustment. Fine hair, motion blur, smoky edges and occlusions require inspection. Source-preserving compositing does not make generated interaction physically exact.
 - Supported native colour paths are explicit. The legal-range RGB working copy clips out-of-range decoded RGB; strict mode can reject it. Unsupported Log/RAW/ICC/dynamic-HDR or other source encodings may need conversion before import. Original encoded uploads are retained.
 - Lighting differences, glow and shadow are compositing approximations. Optional generated scene/actor lighting can change apparent texture or introduce residue.
 - Nuke/After Effects adapters and ProRes element packaging are not shipped. Float OpenEXR layer export and browser/native movie outputs are available as described in the export guide.
-- The locked OpenCV 5.0.0.93 Linux wheel lacks the EXR codec. Float EXR export and signed interaction-lighting generation fail with that build. These features are validated on macOS; a Linux codec/dependency fix is not included in v1.
+- Version 1.0.1 pins OpenCV below 5 to restore float EXR support. Linux and macOS CI include export/lighting regression coverage; physical Windows/Linux GPU acceptance remains outstanding.
 - macOS fresh-environment installation is checked for this release. Separate physical-machine and Windows/Linux GPU acceptance is not complete. Unit tests use synthetic provider transport; live access and visual quality vary by installation.
 - This is a local single-user server. It is not an authenticated multi-user public service. Keep its default loopback binding for normal desktop use.
 

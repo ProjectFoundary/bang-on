@@ -225,6 +225,8 @@
         {#if mode==='depth3d'}<label>Origin depth offset · positive toward camera<input type="number" min="-5" max="5" step=".05" value={cfg.depth_offset} onchange={e=>{init();selected!.element!.depth_offset=+e.currentTarget.value;onchange();}}/></label>{/if}
         {#each [['blur','Guide blur',0,24,.5],['shading','Guide shading contrast',.1,4,.1]] as [key,label,min,max,step]}<label>{label}<input type="range" {min} {max} {step} value={cfg[key as keyof typeof cfg] as number} oninput={e=>{init();(selected!.element as any)[key]=+e.currentTarget.value;onchange();}}/></label>{/each}
         <label>Seed<input type="number" min="0" value={cfg.seed} onchange={e=>{init();selected!.element!.seed=+e.currentTarget.value;onchange();}}/></label>
+        <label>AlphaGen seed<input type="number" min="0" max="9007199254740991" value={cfg.alpha_seed} onchange={e=>{init();selected!.element!.alpha_seed=+e.currentTarget.value;onchange();}}/></label>
+        <p class="small muted">The matte has its own seed. Changing only this seed keeps the RGB reusable when the captured guide is unchanged. Review the new matte before approving.</p>
         <button class="ghost small" onclick={()=>{init();selected!.element!.seed=(selected!.element!.seed+1)%2147483647;onchange();}}>New seed variation</button>
       </div></details>
     </fieldset>

@@ -1,4 +1,4 @@
-# Install Bang On v1.0.0
+# Install Bang On v1.0.1
 
 The app is called **Bang On**. Its package and launcher are called **keyfx**.
 
@@ -9,18 +9,18 @@ The app is called **Bang On**. Its package and launcher are called **keyfx**.
 - A recent browser with **WebGL2** and hardware acceleration for local simulation.
 - Your own Comfy Cloud account or a configured local ComfyUI plus API proxy for new model generation. No account is needed to open the included examples or run local previews.
 
-Fresh-environment release checks run on macOS. The Windows/Linux commands below are reference instructions; separate-machine/GPU validation is still outstanding. The locked OpenCV 5.0.0.93 Linux wheel lacks the EXR codec: float EXR export and signed interaction-lighting generation fail with that build. Use the validated macOS installation for those features; Windows/Linux GPU validation is still outstanding.
+Fresh-environment and live browser/Comfy Cloud release checks run on macOS. CI runs the complete automated suite on macOS and Linux, including float EXR export. Windows and separate-machine/GPU acceptance are still outstanding. Version 1.0.1 pins OpenCV below 5 to avoid the EXR codec regression in 5.0.0.93.
 
 ## Packaged installation — no Node required
 
-Download `keyfx-1.0.0-py3-none-any.whl` and `requirements-runtime.txt` from the [v1.0.0 release](https://github.com/ProjectFoundary/bang-on/releases/tag/v1.0.0) into the same folder. The release also provides `SHA256SUMS`.
+Download `keyfx-1.0.1-py3-none-any.whl` and `requirements-runtime.txt` from the [v1.0.1 release](https://github.com/ProjectFoundary/bang-on/releases/tag/v1.0.1) into the same folder. The release also provides `SHA256SUMS`.
 
 On macOS/Linux, run in that folder:
 
 ```sh
 python3.12 -m venv .venv
 .venv/bin/python -m pip install --require-hashes -r requirements-runtime.txt
-.venv/bin/python -m pip install --no-deps keyfx-1.0.0-py3-none-any.whl
+.venv/bin/python -m pip install --no-deps keyfx-1.0.1-py3-none-any.whl
 .venv/bin/keyfx serve --port 8765
 ```
 
@@ -29,7 +29,7 @@ On Windows PowerShell:
 ```powershell
 py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --require-hashes -r requirements-runtime.txt
-.\.venv\Scripts\python.exe -m pip install --no-deps keyfx-1.0.0-py3-none-any.whl
+.\.venv\Scripts\python.exe -m pip install --no-deps keyfx-1.0.1-py3-none-any.whl
 .\.venv\Scripts\keyfx.exe serve --port 8765
 ```
 
@@ -89,3 +89,5 @@ The optional `.env.example` is a reference; the app does not automatically load 
 Before upgrading, stop the app and back up your data folder. Install the next wheel into the same virtual environment, or pull the source update, rebuild the frontend and run `uv sync --locked`. Keep the same data location to retain projects. This is a local single-installation app, not a multi-user hosting service.
 
 If the page is blank, check that the frontend was built (source install) and that the terminal has no errors. If import/export fails, check FFmpeg/FFprobe on PATH. If a generation is unavailable, use the connection/model check before submitting anything.
+
+For a source install, build `web/dist` before running `uv sync`; the Python wheel packages the compiled interface. If sync reports that `web/dist` is missing, run the four frontend commands above, then repeat sync.

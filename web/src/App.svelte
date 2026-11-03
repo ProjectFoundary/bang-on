@@ -319,6 +319,7 @@
   async function open(id: string) {
     clearTimeout(dressingTimer);
     stop();
+    batchActive=false;batchProgress=null;busy='';localProgress=null;
     project = await api.project(id); location.hash = id;
     previewQuality=project.effects.some(e=>e.preset==='smoke_plume_hq')?'high':'draft';
     roomReferenceBusy=false;
@@ -705,12 +706,13 @@
       const result=await runEffectBatch(fresh,new Map([...paths].map(([id,path])=>[id,new Float32Array(path)])),{
         valid:()=>batchActive&&project?.id===pid&&batchConfiguration(project)===key,
         onUpdate:adoptElementUpdate,
-        onProgress:value=>{batchProgress=value;const phase=elementTakeStatus(value.stage);busy=value.effectId?`${value.index} / ${value.total} · ${value.label} · ${phase}`:phase;localProgress=value.frames?{done:value.done??0,total:value.frames}:null;},
+        onProgress:value=>{if(project?.id!==pid)return;batchProgress=value;const phase=elementTakeStatus(value.stage);busy=value.effectId?`${value.index} / ${value.total} · ${value.label} · ${phase}`:phase;localProgress=value.frames?{done:value.done??0,total:value.frames}:null;},
       },{project:api.project,prepare:prepareElement,start:startBatchElement,wait:waitForProject,composite:reviewCompositeElements});
+      if(project?.id!==pid)return;
       reviewResultId=result.render.id;compareMode='result';step=2;selectedId=null;
       message=`Review composite ready · ${result.generated} generated, ${result.reused} reused. Approve individual elements when you are happy with them.`;
-    }catch(e){message=e instanceof Error?e.message:String(e);try{adoptElementUpdate(await api.project(pid));}catch{/* Keep the stopped queue visible if the local service is unreachable. */}}
-    finally{batchActive=false;batchProgress=null;busy='';localProgress=null;}
+    }catch(e){if(project?.id===pid){message=e instanceof Error?e.message:String(e);try{adoptElementUpdate(await api.project(pid));}catch{/* Keep the stopped queue visible if the local service is unreachable. */}}}
+    finally{if(project?.id===pid){batchActive=false;batchProgress=null;busy='';localProgress=null;}}
   }
   async function downloadPreview(){
     if(!project||busy||running)return;

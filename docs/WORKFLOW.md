@@ -16,6 +16,8 @@ Prepare guide captures the isolated element on black and its independent geometr
 
 Generate the selected element to run LTX Fluid RGB, then a separate AlphaGen pass. Inspect both outputs. Approval is explicit and pins that version; reruns create another version. Unknown/failed submissions are retained for inspection and are not automatically retried as new paid jobs.
 
+Advanced guide settings expose a separate AlphaGen seed (1234 for new captures). Changing only that seed can reuse the finished RGB when the captured guide is identical. It creates a new immutable version and runs a new matte pass; inspect and approve it manually. Older frozen recipes keep their original seed behavior. A failed colour-matte check remains a failure, rather than being silently accepted.
+
 Changing simulation or guide settings invalidates the affected generation. Cached finishing controls can reuse the existing generated assets. Review final images after editing matte multiply/erosion/blur, opacity, exposure, original body/generated edge blend, optical holdout softness or glow.
 
 ## Finish

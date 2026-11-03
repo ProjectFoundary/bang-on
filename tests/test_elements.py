@@ -67,6 +67,22 @@ def test_graphs_are_separate_native_ltx_passes_and_alpha_has_no_prompt():
     assert not any('MiniMax' in n['class_type'] for n in alpha.values())
 
 
+def test_alpha_transformer_override_reuses_rgb_cache_and_changes_only_matte_model(tmp_path):
+    original=graphs.normalize_recipe({'active_frames':9})
+    precise=graphs.normalize_recipe({'active_frames':9,'models':{'alpha_transformer':'alpha-bf16.safetensors'}})
+    rgb,_,_=graphs.graph('rgb',Path('guide.mp4'),precise,width=64,height=64)
+    alpha,_,_=graphs.graph('alpha',Path('beauty.mp4'),precise,width=64,height=64)
+    assert rgb['unet']['inputs']['unet_name']==graphs.DEFAULT_MODELS['transformer']
+    assert alpha['unet']['inputs']['unet_name']=='alpha-bf16.safetensors'
+    assert alpha['pos']['inputs']['text']==alpha['neg']['inputs']['text']==''
+    assert elements._profile(original,'rgb')==elements._profile(precise,'rgb')
+    assert elements._profile(original,'alpha')!=elements._profile(precise,'alpha')
+    def path(recipe,stage):
+        return elements._stage_path({'recipe':recipe,'geometry':{'width':64,'height':64},'takes_root':str(tmp_path)},stage,'same-input',{'identity':'same-backend'})
+    assert path(original,'rgb')==path(precise,'rgb')
+    assert path(original,'alpha')!=path(precise,'alpha')
+
+
 def test_full_fake_chain_preserves_alpha_data_and_native_timing(tmp_path):
     path = guide(tmp_path, width=66, height=62)
     take = elements.prepare(tmp_path / 'elements', 'smoke1', path,
@@ -108,6 +124,30 @@ def test_alpha_profile_change_reuses_rgb_but_placement_reuses_both(tmp_path):
     result = elements.run(revised['take_dir'], executor=fake_provider(calls), catalog=catalog())
     assert [c[0] for c in calls] == ['rgb', 'alpha', 'alpha']
     assert result['stages']['rgb']['cached']
+
+
+def test_independent_alpha_seed_reuses_rgb_and_preserves_legacy_recipes(tmp_path):
+    legacy = graphs.normalize_recipe({'active_frames': 5, 'seed': 42})
+    assert 'alpha_seed' not in legacy
+    old_graph, _, _ = graphs.graph('alpha', Path('rgb.mp4'), legacy, width=64, height=64)
+    revised = {**legacy, 'alpha_seed': 1234}
+    new_graph, _, _ = graphs.graph('alpha', Path('rgb.mp4'), revised, width=64, height=64)
+    assert old_graph['noise']['inputs']['noise_seed'] == 42
+    assert new_graph['noise']['inputs']['noise_seed'] == 1234
+    assert elements._profile(legacy, 'rgb') == elements._profile(revised, 'rgb')
+    root, path, calls = tmp_path / 'e', guide(tmp_path), []
+    first = elements.prepare(root, 'fx', path, legacy, provenance=PROVENANCE)
+    elements.run(first['take_dir'], executor=fake_provider(calls), catalog=catalog())
+    retry = elements.prepare(root, 'fx', path, revised, provenance=PROVENANCE)
+    result = elements.run(retry['take_dir'], executor=fake_provider(calls), catalog=catalog(revised))
+    assert result['status'] == 'done' and result['stages']['rgb']['cached']
+    assert [c[0] for c in calls] == ['rgb', 'alpha', 'alpha']
+
+
+@pytest.mark.parametrize('seed', [True, -1, 1.5, '1234', 2**63])
+def test_invalid_alpha_seed_rejected_before_spend(seed):
+    with pytest.raises(ValueError, match='AlphaGen seed'):
+        graphs.normalize_recipe({'alpha_seed': seed})
 
 
 def test_ambiguous_submission_is_never_automatically_retried(tmp_path):

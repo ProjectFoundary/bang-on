@@ -111,7 +111,11 @@ def core_alpha(guide: np.ndarray, *, frozen_policy: dict | None = None) -> np.nd
     if cfg['profile'] == V2_PROFILE:
         distance = cv2.distanceTransform(np.uint8(guide > 8), cv2.DIST_L2, 5)
         sigma = cfg['blur_sigma_at_540']*scale
-        u = np.clip((distance-radius-1.5*sigma)/max(2*sigma, 1e-6), 0, 1)
+        edge_start, edge_width = radius+1.5*sigma, max(2*sigma, 1e-6)
+        # An all-opaque mask has no zero-distance seed: OpenCV returns FLT_MAX.
+        # Saturate the distance before division, retaining the same smoothstep.
+        distance = np.minimum(distance, edge_start+edge_width)
+        u = np.clip((distance-edge_start)/edge_width, 0, 1)
         band = 1-u*u*(3-2*u)
         noise = _coherent_noise(guide, cfg['edge_breakup_period_at_540'], cfg['edge_breakup_seed'])
         core *= 1-cfg['edge_breakup_strength']*band*noise
