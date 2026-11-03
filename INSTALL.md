@@ -86,8 +86,8 @@ Source checkouts default to `data/`. Installed wheels use the per-user KeyFX app
 
 The optional `.env.example` is a reference; the app does not automatically load a `.env` file. Configure through Connect Comfy or set variables in your shell. Credentials are stored server-side in the installation data directory, not in the repository; the local credential file is not an OS-encrypted vault.
 
-Before upgrading, stop the app and back up your data folder. Install the next wheel into the same virtual environment, or pull the source update, rebuild the frontend and run `uv sync --locked`. Keep the same data location to retain projects. This is a local single-installation app, not a multi-user hosting service.
+Before upgrading, stop the app and back up your data folder. Download the new wheel and its `requirements-runtime.txt`, then repeat both wheel-install steps in the same virtual environment. Updating the runtime requirements ensures OpenCV is below 5 for EXR support. For a source update, pull, rebuild the frontend and run `uv sync --locked`. Keep the same data location to retain projects. This is a local single-installation app, not a multi-user hosting service.
 
 If the page is blank, check that the frontend was built (source install) and that the terminal has no errors. If import/export fails, check FFmpeg/FFprobe on PATH. If a generation is unavailable, use the connection/model check before submitting anything.
 
-For a source install, build `web/dist` before running `uv sync`; the Python wheel packages the compiled interface. If sync reports that `web/dist` is missing, run the four frontend commands above, then repeat sync.
+For a source install, build `web/dist` before running `uv sync`; the Python wheel packages the compiled interface. If sync reports that `web/dist` is missing, run the frontend install/build commands above, then repeat sync.
