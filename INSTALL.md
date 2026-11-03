@@ -9,7 +9,7 @@ The app is called **Bang On**. Its package and launcher are called **keyfx**.
 - A recent browser with **WebGL2** and hardware acceleration for local simulation.
 - Your own Comfy Cloud account or a configured local ComfyUI plus API proxy for new model generation. No account is needed to open the included examples or run local previews.
 
-Fresh-environment release checks run on macOS. The Windows/Linux commands below are reference instructions; separate-machine/GPU validation is still outstanding.
+Fresh-environment release checks run on macOS. The Windows/Linux commands below are reference instructions; separate-machine/GPU validation is still outstanding. The locked OpenCV 5.0.0.93 Linux wheel lacks the EXR codec: float EXR export and signed interaction-lighting generation fail with that build. Use the validated macOS installation for those features; Windows/Linux GPU validation is still outstanding.
 
 ## Packaged installation — no Node required
 

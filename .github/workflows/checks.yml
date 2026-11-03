@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   core:
-    runs-on: ubuntu-latest
+    runs-on: macos-15
     env:
       KEYFX_SKIP_EXAMPLES: "1"
       KEYFX_DATA: /tmp/bang-on-ci-data
@@ -27,8 +27,9 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - name: Install media tools and uv
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y ffmpeg
+          if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then
+            HOMEBREW_NO_AUTO_UPDATE=1 brew install ffmpeg
+          fi
           python -m pip install uv
       - name: Check and build interface
         run: |

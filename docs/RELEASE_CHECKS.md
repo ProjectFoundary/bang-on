@@ -36,3 +36,7 @@ uv build --wheel
 For installed-package acceptance, copy `tools/check_installed_release.py` outside the source checkout and run it with the installed environment's Python `-I` and an `--output` path. It blocks external network access and substitutes only the model transport.
 
 The original v1.0.0 tag shipped GitHub Actions as a template because the initial publishing credential lacked workflow-write permission. GitHub Actions is now enabled on `main` through `.github/workflows/checks.yml`. Hosted run results are available on [Actions](https://github.com/ProjectFoundary/bang-on/actions); the release verification recorded above was performed locally.
+
+## Post-release hosted checks
+
+The first [Linux CI run](https://github.com/ProjectFoundary/bang-on/actions/runs/41657931310) passed interface validation and 584 backend tests, but 21 backend tests failed because the locked OpenCV 5.0.0.93 Linux wheel lacks EXR writing support. This is recorded as a v1 platform limitation rather than skipping the affected tests. CI runs the complete suite on macOS 15 Apple Silicon, matching the validated release platform.

@@ -22,6 +22,6 @@ The initial release excludes private development history. Future commits should 
 
 ## GitHub Actions
 
-The build and test workflow at `.github/workflows/checks.yml` runs on pushes to `main`, pull requests and manual dispatch. It checks and builds the interface, runs the backend tests and builds the release wheel. It uses read-only repository permissions and does not require model-provider credentials or paid inference.
+The build and test workflow at `.github/workflows/checks.yml` runs on pushes to `main`, pull requests and manual dispatch. It checks and builds the interface, runs the complete backend suite and builds the release wheel on macOS 15 Apple Silicon. The known Linux EXR codec limitation is recorded in the release checks and installation guide. It uses read-only repository permissions and does not require model-provider credentials or paid inference.
 
 Editing workflow files requires GitHub credentials with workflow-write permission. Local release checks are recorded in [docs/RELEASE_CHECKS.md](docs/RELEASE_CHECKS.md), and hosted run results are available on [Actions](https://github.com/ProjectFoundary/bang-on/actions).

@@ -10,6 +10,7 @@ This is the first public release. Inspect generated results before delivery.
 - Supported native colour paths are explicit. The legal-range RGB working copy clips out-of-range decoded RGB; strict mode can reject it. Unsupported Log/RAW/ICC/dynamic-HDR or other source encodings may need conversion before import. Original encoded uploads are retained.
 - Lighting differences, glow and shadow are compositing approximations. Optional generated scene/actor lighting can change apparent texture or introduce residue.
 - Nuke/After Effects adapters and ProRes element packaging are not shipped. Float OpenEXR layer export and browser/native movie outputs are available as described in the export guide.
+- The locked OpenCV 5.0.0.93 Linux wheel lacks the EXR codec. Float EXR export and signed interaction-lighting generation fail with that build. These features are validated on macOS; a Linux codec/dependency fix is not included in v1.
 - macOS fresh-environment installation is checked for this release. Separate physical-machine and Windows/Linux GPU acceptance is not complete. Unit tests use synthetic provider transport; live access and visual quality vary by installation.
 - This is a local single-user server. It is not an authenticated multi-user public service. Keep its default loopback binding for normal desktop use.
 
