@@ -72,6 +72,9 @@
   let simulationDownload = $state<{url:string;recipe:string;quality:string}|null>(null);
   let framesLoaded = $state(0);
   let saveTimer: ReturnType<typeof setTimeout> | undefined;
+  let pendingShotSave: (() => Promise<void>) | undefined;
+  let shotWrite: Promise<unknown> | undefined;
+  let openingShot = $state(false);
   let raf = 0;
   // undo: one step per gesture (snapshots are taken when the debounced save fires)
   let undoStack: string[] = [], redoStack: string[] = [], lastSnap = '';
@@ -143,6 +146,7 @@
   const latestTake = $derived(project?.renders.find(r => r.kind === 'effect' && r.status === 'done' && r.source_current));
   const activeReview=$derived(step===2?project?.renders.find(r=>r.id===reviewResultId&&r.status==='done'&&r.source_current!==false):undefined);
   const displayedTake = $derived(activeReview ?? currentFinal ?? latestTake ?? project?.renders.find(r=>r.kind==='effect'&&r.status==='done'));
+  const layerExportTake = $derived(displayedTake?.source_current===false?undefined:displayedTake);
   const finishPresentation=$derived(finishTakePresentation(displayedTake,elementMode,allElementsApproved));
   // A result can disappear after an edit. Keep the placement view usable even
   // when a navigation path or stale saved state still requests Result/Wipe.
@@ -174,7 +178,7 @@
   });
 
   onMount(() => {
-    const connectionReady=api.connection().then(value => { connection.set(value); })
+    api.connection().then(value => { connection.set(value); })
       .catch(() => { message='Could not read Comfy settings. Reload to try again.'; })
       .finally(() => connectionLoading=false);
     (async () => {
@@ -184,8 +188,6 @@
       projectList = await api.projects();
       const want = location.hash.slice(1) || projectList[0]?.id;
       if (want) await open(want);
-      await connectionReady;
-      if (!$connection?.configured && !project?.bundled_example) showConnection=true;
     })();
     const poll = setInterval(async () => {
       if (!project || !(running || analysing || flashing)) return;
@@ -316,12 +318,39 @@
     try { const d = await api.track(id); if (project?.id === id) tracker = new Tracker(d); } catch (e) { message = 'Auto-track failed: ' + e; }
   }
 
+  async function setCameraMode(mode:'auto'|'locked'){
+    if(!project||busy||running)return;
+    const pid=project.id;
+    stop();busy='Updating camera motion…';
+    try {
+      await flushShotSave();
+      const fresh=await writeShot(pid,{camera_mode:mode});
+      if(project?.id!==pid)return;
+      project.camera_mode=fresh.camera_mode;
+      adoptElementUpdate(fresh);
+      await loadTrack();
+      message=mode==='locked'?'Camera locked for this shot. Moving mattes and object tracks still work.':'Automatic camera motion restored.';
+    }catch(e){message=e instanceof Error?e.message:String(e);}
+    finally{busy='';}
+  }
+
   async function open(id: string) {
+    if(openingShot||id===project?.id)return;
+    openingShot=true;
+    let next: Project;
+    try {
+      await flushShotSave();
+      next=await api.project(id);
+    } catch(e) {
+      message=`Could not switch shots: ${e instanceof Error?e.message:String(e)}`;
+      return;
+    } finally { openingShot=false; }
     clearTimeout(dressingTimer);
     stop();
     batchActive=false;batchProgress=null;busy='';localProgress=null;
-    project = await api.project(id); location.hash = id;
-    previewQuality=project.effects.some(e=>e.preset==='smoke_plume_hq')?'high':'draft';
+    message='';simulationDownload=null;
+    project = next; location.hash = id;
+    previewQuality='draft';
     roomReferenceBusy=false;
     project.location_role ??= 'opening'; project.location_seed ??= 11; project.environment_seed ??= project.settings.seed;
     project.reference_mode ??= 'opening_only'; locPreview = null; locMix = 1; omitUnready = false;
@@ -351,13 +380,38 @@
       }
     }
   }
+  function cancelShotSave() {
+    clearTimeout(saveTimer);
+    pendingShotSave=undefined;
+  }
+  // Finish writes for the current shot before swapping the live project object.
+  async function flushShotSave() {
+    const write=pendingShotSave;
+    cancelShotSave();
+    if(write)await write();
+    else await shotWrite;
+  }
+  function scheduleShotSave(write:()=>Promise<void>,delay:number) {
+    cancelShotSave();
+    pendingShotSave=write;
+    saveTimer=setTimeout(()=>void flushShotSave().catch(e=>message=String(e)),delay);
+  }
+  function writeShot(id:string,body:Partial<Project>) {
+    const edits=JSON.parse(JSON.stringify(body)) as Partial<Project>;
+    const write=(shotWrite??Promise.resolve()).catch(()=>{}).then(()=>api.patch(id,edits));
+    shotWrite=write;
+    const settled=()=>{if(shotWrite===write)shotWrite=undefined;};
+    void write.then(settled,settled);
+    return write;
+  }
   function save() {
     if (!project || pipeline) return;
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => {
+    scheduleShotSave(async () => {
       if (!project) return;
       syncKeys(); snapshot();
-      const p = project; api.patch(p.id, { effects: p.effects, shot: p.shot, location: p.location, settings: p.settings, name: p.name }).then(fresh => { if(project?.id === p.id) {project.renders=fresh.renders;project.flashes=fresh.flashes;project.element_takes=fresh.element_takes;project.element_approvals=fresh.element_approvals;project.people_alpha_takes=fresh.people_alpha_takes;loadStages();} }).catch(e => message=String(e));
+      const p = project;
+      const fresh=await writeShot(p.id, { effects: p.effects, shot: p.shot, location: p.location, settings: p.settings, name: p.name });
+      if(project?.id===p.id){project.renders=fresh.renders;project.flashes=fresh.flashes;project.element_takes=fresh.element_takes;project.element_approvals=fresh.element_approvals;project.people_alpha_takes=fresh.people_alpha_takes;loadStages();}
     }, 350);
   }
   function snapshot() {
@@ -367,11 +421,11 @@
   }
   function restore(from: string[], to: string[]) {
     if (!project || !from.length) return;
-    clearTimeout(saveTimer); syncKeys(); snapshot();
+    cancelShotSave(); syncKeys(); snapshot();
     to.push(JSON.stringify(project.effects));
     const prev = from.pop()!; project.effects = JSON.parse(prev); lastSnap = prev;
     if (selectedId && !project.effects.some((e) => e.id === selectedId)) selectedId = null;
-    api.patch(project.id, { effects: project.effects });
+    void writeShot(project.id, { effects: project.effects }).catch(e=>message=String(e));
   }
   const undo = () => restore(undoStack, redoStack);
   const redo = () => restore(redoStack, undoStack);
@@ -385,20 +439,30 @@
   }
   async function saveNow() {
     if (!project) return;
-    clearTimeout(saveTimer); syncKeys(); snapshot();
-    await api.patch(project.id, { effects: project.effects, shot: project.shot, location: project.location, settings: project.settings,
+    cancelShotSave(); syncKeys(); snapshot();
+    await writeShot(project.id, { effects: project.effects, shot: project.shot, location: project.location, settings: project.settings,
       dressing: project.dressing, lighting: project.lighting, empty_set: project.empty_set,
       location_role: project.location_role, location_seed: project.location_seed, environment_seed: project.environment_seed,
       reference_mode: project.reference_mode, image_models: project.image_models });
   }
 
   async function place(x: number, y: number) {
-    if (!project || !armed) return;
-    await saveNow();
-    project = await api.addEffect(project.id, armed, frame, x, y);
-    const e = project.effects[project.effects.length - 1];
-    selectedId = e.id; armed = null;
-    save();
+    if (!project || !armed || busy || openingShot) return;
+    const pid=project.id,preset=armed,at=frame;
+    busy='Placing effect…';
+    try {
+      await saveNow();
+      const fresh=await api.addEffect(pid,preset,at,x,y);
+      if(project?.id!==pid)return;
+      project=fresh;
+      selectedId=fresh.effects.at(-1)!.id;armed=null;
+      save();
+      await tick();
+      const panel=inspectorSection?.querySelector('fieldset');
+      const controls=panel?.querySelector('#selected-effect-placement');
+      if(panel&&controls&&window.innerWidth>760)panel.scrollTop+=controls.getBoundingClientRect().top-panel.getBoundingClientRect().top;
+    } catch(e) { message=e instanceof Error?e.message:String(e); }
+    finally { busy=''; }
   }
 
   function removeSelected() {
@@ -454,19 +518,18 @@
   }
   function saveLocation() {
     if (!project) return;
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => { if (project) api.patch(project.id, { dressing: project.dressing, lighting: project.lighting, location: project.location,
+    scheduleShotSave(async () => { if (project) await writeShot(project.id, { dressing: project.dressing, lighting: project.lighting, location: project.location,
       empty_set: project.empty_set, shot: project.shot, location_role: project.location_role, location_seed: project.location_seed,
       environment_seed: project.environment_seed, reference_mode: project.reference_mode } as Partial<Project>); }, 300);
   }
   async function buildLocation() {
     if (!project) return;
-    clearTimeout(saveTimer);
+    cancelShotSave();
     project.location_frame = project.location_role === 'scene' ? frame : 0;
     if (project.location_role !== 'scene') { stop(); frame = 0; project.empty_set = false; }
     try {
       await savePeople(true);
-      await api.patch(project.id, { dressing: project.dressing, lighting: project.lighting, location: project.location, empty_set: project.empty_set,
+      await writeShot(project.id, { dressing: project.dressing, lighting: project.lighting, location: project.location, empty_set: project.empty_set,
         location_frame: project.location_frame, location_role: project.location_role, shot: project.shot, location_seed: project.location_seed, image_models: project.image_models } as Partial<Project>);
       const r = await api.render(project.id, 'location'); project.renders = [r, ...project.renders]; message = cutoutMode || project.empty_set ? 'Building the empty location…' : manualPeople ? 'Building the location, then integrating the selected people…' : 'Building the location directly from your original plate…'; }
     catch (e) { message = String(e); }
@@ -682,7 +745,7 @@
     fresh=await waitForProject(pid,p=>{const t=p.element_takes?.find(t=>t.id===take!.id);return t?.status==='done'||t?.status==='error';},adoptElementUpdate);
     const finished=fresh.element_takes?.find(t=>t.id===take!.id);if(finished?.status==='error')throw new Error(finished.error??'Element generation failed. Review its status before preparing another version.');
   }
-  async function prepareOneElement(id:string,render:boolean){stop();try{await elementWork(id,render);message=render?'Element RGB and alpha ready.':'Guide prepared. Open its Guide link to review before rendering.';}catch(e){message=String(e);}finally{busy='';localProgress=null;}}
+  async function prepareOneElement(id:string,render:boolean){stop();try{await elementWork(id,render);message=render?'Element RGB and alpha ready.':'Guide prepared. Choose Review prepared guide video to check it before generating.';}catch(e){message=String(e);}finally{busy='';localProgress=null;}}
   async function refreshExplosionMatte(effectId:string,takeId:string){
     if(!project||busy||running)return;stop();const pid=project.id;busy='Capturing local explosion opacity…';
     try{
@@ -763,7 +826,7 @@
     try{
       await saveNow();const fresh=await api.patch(pid,{settings:{...project.settings,pipeline:'ltx_elements',legacy_h3:false,polish:false}});
       if(project?.id!==pid)return false;
-      project=fresh;previewQuality=project.effects.some(e=>e.preset==='smoke_plume_hq')?'high':'draft';await loadStages();
+      project=fresh;previewQuality='draft';await loadStages();
       message=project.native_profile?'LTX elements enabled. Effects are generated separately over your original photography.':'LTX elements enabled on this working plate. Reimport the original source to retain its native format.';
       return true;
     }catch(e){message=String(e);return false;}finally{busy='';}
@@ -832,10 +895,10 @@
     <button class="ghost connection-button" class:verified={!!$connection?.configured && !!$connection?.report?.connected}
       disabled={!!busy || connectionLoading} onclick={() => {stop();showConnection=true;}} title={$connection?.configured ? `${$connection.mode==='cloud'?'Comfy Cloud':'Local ComfyUI'} · ${$connection.report?.connected?'last connection test passed':'test connection'}` : 'Connect your Comfy account or local installation'}>
       <span class="connection-dot" aria-hidden="true"></span>{$connection?.configured?$connection.mode==='cloud'?'Comfy Cloud':'Local ComfyUI':'Connect Comfy'}</button>
-    {#if projectList.length}<select aria-label="Current shot" disabled={!!busy} value={project?.id ?? ''} onchange={(e) => open(e.currentTarget.value)}>
+    {#if projectList.length}<select aria-label="Current shot" disabled={!!busy||openingShot} value={project?.id ?? ''} onchange={async(e) => {const select=e.currentTarget;await open(select.value);select.value=project?.id??'';}}>
       {#each projectList as p}<option value={p.id}>{p.name}</option>{/each}
     </select>{/if}
-    <button class="ghost" disabled={!!busy} onclick={() => (showNew = true)}>New shot</button>
+    <button class="ghost" disabled={!!busy||openingShot} onclick={() => (showNew = true)}>New shot</button>
   </div>
 </header>
 
@@ -888,7 +951,7 @@
       {#if step===2&&['result','wipe'].includes(viewMode)&&displayedTake?.source_current===false}<p class="small muted">This result uses earlier settings. Preview shows your current placement.</p>{/if}
       {#if step===3&&viewMode!=='source'&&finishPresentation.notice}<p class="small muted" role="status">{finishPresentation.notice}</p>{/if}
       {#if viewMode === 'wipe'}<label class="wipe-control">Source / result <input type="range" min="0" max="100" bind:value={compareSplit} aria-label="Source plate comparison wipe" /></label>{/if}
-      <div class="preview-body" style:--source-aspect={sourceAspect} class:locked={!!pipeline||!!busy}>
+      <div class="preview-body" style:--source-aspect={sourceAspect} class:locked={!!pipeline||!!busy||openingShot}>
         <ComparePlate aspectRatio={sourceAspect} projectId={project.id} frame={comparisonFrame} mode={step === 1 && (locationTab==='people' || locationTab === 'objects' && !!dressingDraft?.source) ? 'result' : comparisonMode} split={compareSplit}>
           {#if step===1 && locationTab==='people'}
             <PeopleView {project} {frame} compareMode={comparisonMode} {compareSplit} disabled={running||!!busy} onchange={()=>savePeople()}/>
@@ -909,10 +972,11 @@
       </div>
       {#if step===2&&elementMode}
         <div class="simulation-download">
+          <label>Preview quality <select bind:value={previewQuality} onchange={stop}><option value="draft">Fast · interactive</option><option value="high">High · full simulation</option></select></label>
           <button disabled={!!busy||running} onclick={downloadPreview}>Download simulation preview · MP4</button>
           {#if previewAbort}<button onclick={()=>previewAbort?.abort()}>Cancel preview export</button>{/if}
           {#if simulationDownload&&simulationDownload.recipe===previewRecipe(project)&&simulationDownload.quality===previewQuality}<a href={simulationDownload.url} download>Download again</a>{/if}
-          <span class="small muted">All FX over the plate · {previewQuality==='high'?'High':'Draft'} · SDR · 24fps · no handles or model spend</span>
+          <span class="small muted">All FX over the plate · {previewQuality==='high'?'High':'Fast'} · SDR · 24fps · no handles or model spend</span>
         </div>
       {/if}
       {#if !(step === 1 && locationTab === 'objects' && dressingDraft?.source)}
@@ -947,7 +1011,7 @@
 
     <aside bind:this={inspectorSection} class="inspector" aria-label="Shot controls">
       <div class="panel-title"><strong>{step === 1 ? 'Set the scene' : step === 2 ? 'Direct the effects' : 'Review your take'}</strong><span class="small muted">{(project.native_profile?.duration??project.frames/24).toFixed(2)}s</span></div>
-      <fieldset disabled={!!pipeline||!!busy||roomReferenceBusy}>
+      <fieldset disabled={!!pipeline||!!busy||roomReferenceBusy||openingShot}>
       {#if step === 1}
         <div class="subtabs" role="group" aria-label="Scene tools"><button class:active={locationTab === 'room'} onclick={() => locationTab = 'room'}>{project.mode==='greenscreen'?'Location':'Footage'}</button>{#if project.mode==='greenscreen'}<button class:active={locationTab === 'objects'} onclick={() => locationTab = 'objects'}>Objects</button>{/if}<button class:active={locationTab==='people'} onclick={()=>{stop();locationTab='people';compareMode='result';frame=0;}}>People</button></div>
         {#if locationTab==='people'}
@@ -1031,7 +1095,9 @@
               <div class="render row"><div class="grow"><strong class="small">Scene {r.created.slice(11,16)}</strong><span class="chip {statusChip(r.status)}">{r.status === 'done' ? project.approved_environment === r.id ? 'approved' : 'review needed' : r.status}</span>{#if r.error}<p class="err small">{r.error}</p>{/if}</div>{#if r.status==='done'}<button onclick={() => showResult = r}>Review</button>{/if}</div>
             {/each}
           </div>
-        {:else}<div class="block"><p>Your original footage is the scene.</p><p class="small muted">Continue to Effects to place smoke, fire and explosions. The original plate supplies the action; no action analysis is required.</p>{#if project.native_profile}<p class="small muted">{project.native_profile.rgb_range_policy==='legalize'?'Legal-range working-copy master':'Native photographic master'} · {project.native_profile.width} × {project.native_profile.height} · {project.native_profile.fps_rational} fps. FX are generated separately and composited over this source.</p>{#if project.native_profile.working_copy_warning}<p class="small muted" role="status">{project.native_profile.working_copy_warning}</p>{/if}{:else}<details><summary>Change the scene <span>Optional</span></summary><div class="adv"><button disabled={running||!!busy} onclick={changeScene}>Create a new environment</button><p class="small muted">Generate a location from this plate. No matte is needed unless you choose to select people.</p></div></details>{/if}</div>{/if}
+        {:else}<div class="block"><p>Your original footage is the scene.</p>
+          <label>Camera motion<select aria-label="Camera motion" value={project.camera_mode??'auto'} disabled={running||!!busy} onchange={e=>setCameraMode(e.currentTarget.value as 'auto'|'locked')}><option value="auto">Auto-track camera</option><option value="locked">Locked camera · static plate</option></select></label>
+          <p class="small muted">Use Locked camera for tripod shots or static renders, especially when moving objects dominate the image.</p><p class="small muted">Continue to Effects to place smoke, fire and explosions. The original plate supplies the action; no action analysis is required.</p>{#if project.native_profile}<p class="small muted">{project.native_profile.rgb_range_policy==='legalize'?'Legal-range working-copy master':'Native photographic master'} · {project.native_profile.width} × {project.native_profile.height} · {project.native_profile.fps_rational} fps. FX are generated separately and composited over this source.</p>{#if project.native_profile.working_copy_warning}<p class="small muted" role="status">{project.native_profile.working_copy_warning}</p>{/if}{:else}<details><summary>Change the scene <span>Optional</span></summary><div class="adv"><button disabled={running||!!busy} onclick={changeScene}>Create a new environment</button><p class="small muted">Generate a location from this plate. No matte is needed unless you choose to select people.</p></div></details>{/if}</div>{/if}
 
       {:else if step === 2}
         <div class="block workflow-choice"><div class="row"><h2>{elementMode?'Direct each effect':project.mode==='plate'?'Legacy H3':'Scene effects · H3'}</h2>{#if elementMode}<span class="workflow-tag">LTX · original plate</span>{/if}</div>
@@ -1066,9 +1132,10 @@
           </div>
         {:else if selected}
           {@const p = presets[selected.preset]}{@const d = p.direction}
-          <div class="block"><div class="row"><h2>{elementMode?'1. Place · ':''}{p.name}</h2><span class="grow"></span><button class="ghost small" onclick={duplicate}>Duplicate</button><button class="ghost danger small" onclick={removeSelected}>Remove</button></div>
+          <div class="block" id="selected-effect-placement"><div class="row"><h2>{elementMode?'1. Place · ':''}{p.name}</h2><span class="grow"></span><button class="ghost small" onclick={duplicate}>Duplicate</button><button class="ghost danger small" onclick={removeSelected}>Remove</button></div>
             <label>Placement description <input bind:value={selected.where} oninput={save} placeholder={p.default_where}/></label>
             <label>Tracking<select aria-label="Tracking" value={selected.tracking??(elementMode?'camera':'features')} onchange={e=>{selected!.tracking=e.currentTarget.value as Effect['tracking'];save();}}><option value="camera">Place in scene · camera only</option><option value="features">Track object · local features</option><option value="screen">Fixed in frame</option></select></label>
+            {#if elementMode}<p class="small muted">If a moving subject pulls the effect across a locked-off shot, try Fixed in frame.</p>{/if}
             <label>Size <input type="range" min=".2" max="3" step=".01" bind:value={selected.size} oninput={save}/></label>
             {#if d && d.kind !== 'none'}<label>Direction <input type="range" min="0" max="359" step="1" bind:value={selected.angle} oninput={save}/></label>{#if d.kind !== 'barrel'}<label>{d.label} <input type="range" min="0" max="1" step=".01" bind:value={selected.strength} oninput={save}/></label>{/if}{/if}
             <label>Start frame <input type="number" min={canPreroll(p) ? -PREROLL_MAX : 0} max={project.frames-1} value={elementMode?elementOnset(selected):onsetOf(selected,p)} onchange={(e) => setStart(selected!,+e.currentTarget.value)}/></label>
@@ -1077,7 +1144,6 @@
         {/if}
         {#if elementMode}
           {#if effectTool==='effects'}<ElementPanel {project} {frame} {selected} disabled={running||!!busy} onchange={save} onupdated={adoptElementUpdate} onprepare={id=>prepareOneElement(id,false)} onrender={id=>prepareOneElement(id,true)} onrerun={rerunOneElement} onmatte={refreshExplosionMatte} onpreview={reviewElementSimulation} onconnect={()=>{stop();showConnection=true;}}/>{/if}
-          <div class="block"><details><summary>Advanced · preview quality</summary><div class="adv"><label>Preview quality<select bind:value={previewQuality}><option value="draft">Draft · faster</option><option value="high">High · authored plume quality</option></select></label><p class="small muted">Guide capture always uses High quality. This changes only the live preview.</p></div></details></div>
         {:else}
         <div class="block"><h2>People interaction</h2>
           <label class="check"><input type="checkbox" checked={!!project.settings.collider} onchange={e=>{for(const fx of project!.effects)if(['smoke_white','smoke_plume'].includes(fx.preset))fx.tracking??='camera';project!.settings.collider=e.currentTarget.checked;save();}}/> Collider mode</label>
@@ -1103,12 +1169,11 @@
         {/if}
         <details class="history"><summary>Take history <span>{project.renders.filter(r => r.kind==='effect'||r.kind==='keys').length}</span></summary>{#each project.renders.filter(r => r.kind==='effect'||r.kind==='keys') as r}<div class="render row"><div class="grow"><span class="small">{r.kind==='keys' ? 'Effect keys' : 'Effects take'} · {r.created.slice(11,16)}</span><span class="chip {statusChip(r.status)}">{r.status}</span>{#if r.error}<p class="err small">{r.error}</p>{/if}</div>{#if r.status==='done'}<button onclick={() => showResult=r}>Compare</button>{/if}</div>{/each}</details>
       {:else}
-        {#if elementMode}<FinishingLighting {project} disabled={running||!!busy} configured={!!$connection?.configured} onrun={runLighting} onsetting={lightingSetting}/><IntegrationPanel {project} disabled={running||!!busy} onchange={save} onrebuild={buildElementComposite}/><LayerExports {project} render={displayedTake} disabled={running||!!busy}/>{/if}
         <div class="block"><h2>Ready to finish</h2>
           <div class="readiness"><span>Scene</span><strong>{envReady ? 'Ready' : 'Review needed'}</strong></div>
           <div class="readiness"><span>{elementMode?'Approved elements':'Effects video'}</span><strong>{elementMode?`${approvedElements} / ${project.effects.length}`:!project.effects.length?'Not needed':latestTake?'Ready':'Pending'}</strong></div>
           <div class="readiness"><span>Muzzle frames</span><strong>{readyFlashes} / {flashList.length} ready</strong></div>
-          {#if !envReady}<button onclick={goScene}>Review scene</button>{:else if !currentFinal}<button onclick={goEffects}>Continue in Effects</button>{/if}
+          {#if !envReady}<button onclick={goScene}>Review scene</button>{:else if elementMode?!allElementsApproved:!currentFinal}<button onclick={goEffects}>Continue in Effects</button>{/if}
           {#if elementMode}
             {#if !allElementsApproved}<p class="notice small">Generate and approve each effect in Effects before building the final take.</p>{/if}
             <button class="primary wide" disabled={!allElementsApproved||running||flashing||!envReady||!!busy||allowanceBlocked||flashTodo.length>0&&!$connection?.configured} onclick={generateTake}>Build final take</button>
@@ -1122,16 +1187,21 @@
             <button disabled={!!busy || running || elementMode&&!allElementsApproved || (flashList.length>readyFlashes && !omitUnready)} onclick={exportFinal}>Build export without generation</button>
           </div></details>{/if}
         </div>
+        {#if elementMode}<FinishingLighting {project} disabled={running||!!busy} configured={!!$connection?.configured} onrun={runLighting} onsetting={lightingSetting}/><IntegrationPanel {project} disabled={running||!!busy} onchange={save} onrebuild={buildElementComposite}/>{/if}
+        {#if elementMode}{#key project.id}<LayerExports {project} render={layerExportTake} needsApproval={!allElementsApproved&&!layerExportTake?.review_only} disabled={running||!!busy}/>{/key}{/if}
         <details class="history"><summary>Earlier exports <span>{finals.filter(r => !r.source_current).length}</span></summary>{#each finals.filter(r => !r.source_current) as r}<div class="render row"><div class="grow"><span class="small">Earlier take · {r.created.slice(11,16)}</span><p class="muted small">Previous inputs</p></div><button onclick={() => showResult=r}>Compare</button><a href={api.renderUrl(project.id,r.id,'result.mp4')} download>Download</a></div>{/each}</details>
       {/if}
       </fieldset>
       {#if step === 1}<div class="action-footer"><button class="wide" disabled={!envReady || running} onclick={goEffects}>Continue to effects</button>{#if !envReady}<p class="small muted">Review and approve a scene video to continue.</p>{/if}</div>{:else if step === 2}        <div class="action-footer">
-          <p class="small muted">{project.effects.length} effects · {flashList.length} muzzle frames</p>
           {#if elementMode}
-            <button class="primary wide" disabled={!project.effects.length||!!busy||running||flashing||batchNeedsGeneration&&!$connection?.configured} onclick={generateEffectsBatch}>Generate effects with LTX</button>
-            {#if batchProgress}<p class="small" role="status">{busy}</p>{:else}<p class="small muted">Keeps approved effects and reuses ready versions. Generates the remaining elements, then builds a review composite. Approval stays manual.</p>{/if}
-            {#if batchNeedsGeneration&&!$connection?.configured}<button class="small" onclick={()=>showConnection=true}>Connect Comfy to generate effects</button>{/if}
-            <button class="wide" disabled={!!busy||running} onclick={()=>goStep(3)}>Continue to Finish</button><p class="small muted">{approvedElements} / {project.effects.length} elements approved. Finish adjusts the composite and builds the final take.</p>{:else}
+            {#if project.effects.length}
+              <p class="small muted">{approvedElements} / {project.effects.length} elements approved</p>
+              {#if batchNeedsGeneration&&!$connection?.configured}<button class="wide" onclick={()=>showConnection=true}>Connect Comfy to generate effects</button>
+              {:else}<button class="primary wide" disabled={!!busy||running||flashing} title="Reuse ready versions, generate missing elements, then build a review. Approval stays manual." onclick={generateEffectsBatch}>Generate effects with LTX</button>{/if}
+              {#if batchProgress}<p class="small" role="status">{busy}</p>{/if}
+            {/if}
+            <button class="wide" disabled={!!busy||running||openingShot} onclick={()=>goStep(3)}>Continue to Finish</button>{:else}
+          <p class="small muted">{project.effects.length} effects · {flashList.length} muzzle frames</p>
           <button class="primary wide" disabled={running || flashing || !envReady || !!busy || allowanceBlocked} onclick={generateTake}>{pipeline ? pipeline.status==='effects' ? 'Generating effects video…' : pipeline.status==='flashes' ? 'Generating muzzle frames…' : 'Finishing take…' : busy || 'Generate take'}</button>
           {#if flashCost?.unlimited}<p class="small muted">Muzzle allowance: Unlimited</p>{:else if pendingFlashCount && flashCost}<p class="small muted">Muzzle allowance: {pendingFlashCount*flashCost.per_flash} credits needed · {flashCost.allowance_left} available.</p>{/if}{#if allowanceBlocked}<p class="small muted">Increase the server allowance to generate.</p>{/if}
           {/if}

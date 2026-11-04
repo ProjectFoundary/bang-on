@@ -34,8 +34,9 @@ export function elementTakeStatus(status:string):string{
 
 /** Historical pixels remain inspectable without being labelled current. */
 export function finishTakePresentation(take:Render|undefined,elementMode:boolean,allElementsApproved:boolean){
-  if(take?.review_only)return {heading:'REVIEW COMPOSITE',notice:take.source_current===false?'This review uses earlier settings. Generate effects with LTX to update it.':allElementsApproved?'Build a final take from the approved versions in Finish.':'Review and approve individual elements before building the final take.'};
-  if(take?.source_current!==false)return {heading:'CURRENT TAKE',notice:''};
+  if(!take)return {heading:'SOURCE PLATE',notice:''};
+  if(take.review_only)return {heading:'REVIEW COMPOSITE',notice:take.source_current===false?'This review uses earlier settings. Generate effects with LTX to update it.':allElementsApproved?'Build a final take from the approved versions in Finish.':'Review and approve individual elements before building the final take.'};
+  if(take.source_current!==false)return {heading:'CURRENT TAKE',notice:''};
   const next=elementMode
     ?allElementsApproved?'Update composite from cached elements, then build the final take.':'Review the changed elements in Effects, then build the final take.'
     :'Generate an updated effects take in Effects, then finish again.';

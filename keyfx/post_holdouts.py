@@ -59,9 +59,11 @@ def read_mask(root, matte, frame, *, original=False):
     return mask.astype(np.float32)/np.iinfo(mask.dtype).max
 
 
-def camera_matrices(p, width, height):
+def camera_matrices(p, width, height, *, track_path=None, reference_frame=None):
     from . import projects
-    path = projects.track_file(p)
+    if projects.camera_locked(p):
+        return [np.eye(3) for _ in range(p['frames'])]
+    path = track_path if track_path is not None else projects.track_file(p)
     track = json.loads(path.read_text()); raw = track.get('H', track.get('camera'))
     if not isinstance(raw, list) or len(raw) != p['frames']:
         raise ValueError('The camera track does not cover the native people holdout.')
@@ -75,7 +77,7 @@ def camera_matrices(p, width, height):
             raise ValueError('Invalid people-holdout camera transform.')
         matrices.append(matrix)
     scale = np.diag([width/track.get('w',960),height/track.get('h',540),1.])
-    ref = p.get('geometry',{}).get('reference_frame',0)
+    ref = reference_frame if reference_frame is not None else p.get('geometry',{}).get('reference_frame',0)
     return [scale@matrix@np.linalg.inv(matrices[ref])@np.linalg.inv(scale) for matrix in matrices]
 
 

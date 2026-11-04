@@ -7,7 +7,7 @@ import zipfile
 from fastapi.testclient import TestClient
 import pytest
 
-from keyfx import bundled_examples, projects
+from keyfx import bundled_examples, element_jobs, projects
 from keyfx.server import app
 
 
@@ -40,6 +40,17 @@ def test_fresh_start_installs_two_complete_offline_samples(tmp_path,monkeypatch)
         shutil.rmtree(projects.pdir('example-house-explosion-v1'))
         assert bundled_examples.install_defaults()==[]
         assert not projects.pdir('example-house-explosion-v1').exists()
+
+def test_old_house_composite_is_historical_after_the_roof_solver_changes():
+    archive = bundled_examples.ASSETS / 'example-house-explosion-v1.zip'
+    with zipfile.ZipFile(archive) as z:
+        files = json.loads(z.read('files.json'))
+        house = json.loads(z.read('blobs/' + files['project.json']))
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(element_jobs, 'uses_authored_box_collision', lambda *_: False)
+        old = {'kind': 'effect', 'base': 'plate', 'effect_signature': projects.effect_signature(house)}
+        assert projects.render_current(house, old)
+    assert not projects.render_current(house, old)
 
 
 def test_preexisting_project_is_never_overwritten(tmp_path,monkeypatch):

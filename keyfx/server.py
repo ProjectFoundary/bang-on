@@ -194,6 +194,7 @@ def get_project(pid: str):
 class Patch(BaseModel):
     action_review: str | None = None
     mode: Literal['plate','greenscreen'] | None = None
+    camera_mode: Literal['auto','locked'] | None = None
     people: dict | None = None
     image_models: dict | None = None
     name: str | None = None
@@ -231,6 +232,8 @@ def patch_project(pid: str, body: Patch):
         try: changes['settings'] = projects.effect_settings({**existing,'settings': changes['settings']})
         except (ValueError, TypeError) as exc: raise HTTPException(400, str(exc))
     candidate = {**existing, **changes}
+    if changes.get('camera_mode') == 'locked' and candidate['mode'] != 'plate':
+        raise HTTPException(400, 'Locked camera is available for original footage shots.')
     if element_jobs.enabled(candidate):
         try:
             ids=set()
@@ -279,6 +282,8 @@ def patch_project(pid: str, body: Patch):
         changes.pop('flash_base')
 
     def fn(p):
+        if 'camera_mode' in changes and projects.generation_active(p):
+            raise HTTPException(409, 'Wait for the current render before changing camera motion.')
         p.update(changes)
         if 'mode' in changes and changes['mode']!=existing['mode']:
             p['approved_environment']=None
@@ -455,6 +460,11 @@ def frame(pid: str, i: int, base: str = 'auto'):
 def get_track(pid: str):
     """Auto-track of the frames effects are placed on (computed on first request if missing)."""
     p = _project(pid)
+    if projects.camera_locked(p):
+        data = json.loads(projects.track_file(p).read_text())
+        data['camera'] = [[1, 0, 0, 0] for _ in range(p['frames'])]
+        data.pop('H', None)
+        return JSONResponse(data, headers={'Cache-Control':'no-store'})
     return FileResponse(projects.track_file(p), media_type='application/json')
 
 

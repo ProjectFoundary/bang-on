@@ -51,6 +51,7 @@ export type MattePoint = { frame: number; person: number; label: 0 | 1; x: numbe
 export type People = { selection: 'auto' | 'manual'; mode: 'guide' | 'cutout'; points: MattePoint[]; feather: number; trim: number; extra_reference: boolean };
 export type Project = {
   id: string; name: string; mode: 'plate' | 'greenscreen'; frames: number; created: string; start_s?:number;
+  camera_mode?: 'auto' | 'locked';
   bundled_example?: {id:string;description:string;generation_required_to_open:boolean;references:{id:string;label:string;file:string}[]};
   source: { file: string; fps: number; width: number; height: number; duration?: number };
   shot: string; location: string; background: string | null; environment: string | null;
@@ -118,7 +119,7 @@ export const api = {
   render: (id: string, kind: 'effect' | 'environment' | 'keys' | 'location' | 'dressing' | 'finish' | 'matte' | 'analysis') =>
     fetch(`/api/projects/${id}/render`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind }) }).then(j<Render>),
   prompt: (id: string) => fetch(`/api/projects/${id}/prompt`).then((r) => r.text()),
-  track: (id: string) => fetch(`/api/projects/${id}/track`).then(j<import('./track').TrackData>),
+  track: (id: string) => fetch(`/api/projects/${id}/track`,{cache:'no-store'}).then(j<import('./track').TrackData>),
   renderMockup: (id: string, kind: 'effect' | 'keys' | 'finish', layers: { frame: number; fx: Blob; glow: Blob }[], collider = '') => {
     const fd = new FormData(); fd.append('kind', kind); fd.append('collider', collider);
     for (const l of layers) { const n = String(l.frame).padStart(4, '0'); fd.append(`fx_${n}.png`, l.fx, `fx_${n}.png`); fd.append(`glow_${n}.png`, l.glow, `glow_${n}.png`); }

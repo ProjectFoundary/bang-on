@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Add **Scene → Camera motion → Locked camera** for static plates. Moving mattes and local feature tracks remain available.
+- Keep smoke below thin solid roof colliders until it can flow around their edges.
+- Default to **Fast** for interactive smoke previews and keep the full simulation for guide capture.
+- Save pending edits before switching shots. Make the effect picker and prepared guide easier to reach, and show the approval requirement before enabling layer export.
+
 ## v1.0.2 — 2026-11-04
 
 - Add a **Depth convention** control for imported depth PNGs in **Effects → Interaction → Depth 3D**. Choose **Bright is far** for distance passes like the Blender depth in the house fireball example.

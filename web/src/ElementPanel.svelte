@@ -37,6 +37,7 @@
   const depthJob=$derived(geometryJob(project.renders,'depth'));
   const matteJob=$derived(geometryJob(project.renders,'matte'));
   const rows=$derived(project.element_takes?.filter(t=>t.effect_id===selected?.id)??[]);
+  const currentGuide=$derived(rows.find(t=>t.current&&t.backend_current!==false));
   const assigned=$derived(selected?.element?.colliders??[]);
   $effect(()=>{referenceFrame=project.geometry?.reference_frame??0;});
   $effect(()=>{depthKind=project.geometry?.depth?.kind??'inverse';});
@@ -233,6 +234,9 @@
       {/if}
       <button disabled={!!issue} onclick={()=>onpreview(selected!.id)}>Play simulation · local preview</button>
       <button disabled={!!issue} onclick={()=>onprepare(selected!.id)}>Prepare guide video · no model spend</button>
+      {#if currentGuide}<a class="small" href={`/api/projects/${project.id}/element-takes/${currentGuide.id}/guide.mp4`} target="_blank" rel="noreferrer">Review prepared guide video ↗</a>
+        {#if cfg.cadence>1}<p class="small muted">The guide shows only sampled frames. Use Play simulation to check the motion between them.</p>{/if}
+      {/if}
       {#if issue}<p class="small setup-notice">{issue}</p>{/if}
       <div class="adv">
         <label>Painted frame submission · every Nth frame<input aria-label="Guide frame cadence" type="number" min="1" max="120" step="1" value={cfg.cadence} oninput={e=>guideNumber('cadence',e.currentTarget)}/></label>

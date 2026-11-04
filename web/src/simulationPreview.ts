@@ -7,7 +7,7 @@ import { setVolumeFXScene, renderVolumeElement, pruneVolumeFX } from './volumeFX
 import { image } from './effects';
 import { renderFlashPreview } from './flashPreview';
 
-export const previewRecipe=(p:Project)=>JSON.stringify([p.id,p.effects,p.geometry,p.flashes,p.settings]);
+export const previewRecipe=(p:Project)=>JSON.stringify([p.id,p.camera_mode,p.effects,p.geometry,p.flashes,p.settings]);
 const jpeg=(canvas:HTMLCanvasElement)=>new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Could not capture the preview.')),'image/jpeg',.92));
 
 /** Sequential offline capture: GPU speed cannot drop/reorder video frames. */
@@ -34,7 +34,7 @@ export async function downloadSimulationPreview(p:Project,paths:Map<string,Float
       for(const effect of p.effects){
         const time=elementTime(p,frame),start=Math.max(0,elementTime(p,elementOnset(effect)));
         if(time<start||time>=start+(effect.element?.duration_s??2))continue;
-        const result=renderVolumeElement(effect.id,volumeKind(effect)!,{...volumeOptions(p,effect,frame,paths,canvas.width,canvas.height),quality},frame,'download');
+        const result=renderVolumeElement(effect.id,volumeKind(effect)!,{...volumeOptions(p,effect,frame,paths,canvas.width,canvas.height),quality,interactive:true,compositeOnly:true},frame,'download');
         if(!result)throw new Error('The simulation renderer is unavailable.');
         g.save();try{g.globalAlpha=effect.element?.opacity??1;g.filter=`brightness(${effect.element?.gain??1})`;g.drawImage(result.composite,0,0,canvas.width,canvas.height);}finally{g.restore();}
       }

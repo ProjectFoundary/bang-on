@@ -23,7 +23,7 @@ from .element_api import _project, _idle, _length
 router = APIRouter(prefix='/api/projects/{pid}/simulation-preview', tags=['preview'])
 MAX_BYTES = 256 * 1024 * 1024
 MAX_FRAME_BYTES = 2 * 1024 * 1024
-REVISION = 'simulation-preview-pixel-holdouts-v2'
+REVISION = 'simulation-preview-fast-volume-v3'
 
 
 def plan(p: dict, quality: str = 'high') -> dict:
@@ -51,6 +51,7 @@ def plan(p: dict, quality: str = 'high') -> dict:
     frozen = {k: p.get(k) for k in ('id', 'frames', 'native_profile', 'source', 'start_s', 'effects', 'geometry', 'flashes', 'settings')}
     track = projects.track_file(p)
     frozen['camera_track_sha256'] = hashlib.sha256(track.read_bytes()).hexdigest()
+    frozen['camera_mode'] = 'locked' if projects.camera_locked(p) else 'auto'
     signature = hashlib.sha256(json.dumps([REVISION, quality, frozen], sort_keys=True, separators=(',', ':')).encode()).hexdigest()
     return {'signature': signature, 'quality': quality, 'frames': count, 'fps': 24, 'duration': duration,
             'source_frames': indices, 'capture_width': 960, 'capture_height': 540, 'width': width, 'height': height,

@@ -195,7 +195,7 @@ class Vol{
     for (const s of this.pool) for (const k of this.fields) freeFBO(s[k]);
   }
   clearTex(f){ gl.bindFramebuffer(gl.FRAMEBUFFER,f.fbo); gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT); }
-  startAt(){ return Math.floor(this.inst.frame)-2; }
+  startAt(){ return Math.max(Math.floor(this.inst.frame)-2,this.inst.simStartFrame??-Infinity); }
   reset(){
     if(this.optical)this.optical.key=null;
     this.renderKey=null;

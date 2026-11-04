@@ -16,7 +16,7 @@ export function volumeOpticalCacheStats(){return {bytes:opticalBytes,entries:opt
 export const isElementProject=(p:Project)=>p.settings.pipeline==='ltx_elements';
 export const nativeFPS=(p:Project)=>p.native_profile?.fps??24;
 export const nativeAspect=(p:Project)=>(p.native_profile?.width??1920)/(p.native_profile?.height??1080);
-export function sceneKey(p:Project,w:number,h:number){return JSON.stringify([p.id,p.geometry,p.effects.map(e=>[e.id,e.keys,e.element?.duration_s,e.element?.colliders]),w,h]);}
+export function sceneKey(p:Project,w:number,h:number){return JSON.stringify([p.id,p.camera_mode,p.geometry,p.effects.map(e=>[e.id,e.keys,e.element?.duration_s,e.element?.colliders]),w,h]);}
 
 async function decodeMask(url:string){
   const response=await fetch(url);if(!response.ok)throw new Error('A collision/optical matte frame is missing.');
@@ -64,7 +64,7 @@ export async function loadVolumeScene(p:Project,w=960,h=540):Promise<VolumeFXSce
     let data:any;
     const mode=(p.geometry as {collision_mode?:string}|undefined)?.collision_mode;
     if(p.geometry?.depth||mode!==undefined||p.geometry?.mattes?.length){
-      const response=await fetch(`/api/projects/${p.id}/geometry/scene`);
+      const response=await fetch(`/api/projects/${p.id}/geometry/scene`,{cache:'no-store'});
       if(!response.ok){const error=await response.json().catch(()=>({detail:'Could not load depth/collider geometry.'}));throw new Error(error.detail);}data=await response.json();
     }else{
       if(p.effects.some(e=>e.element?.colliders?.length))throw new Error('Add a depth pass before assigning3D colliders.');

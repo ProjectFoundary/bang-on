@@ -599,25 +599,8 @@ def geometry_scene(pid: str):
             depth = geometry.depth_data(projects.pdir(pid), cfg)
         else:
             depth = {'width': 1, 'height': 1, 'values': [1.], 'kind': 'inverse', 'scale': 4., 'bias': .05}
-        track_path = projects.track_file(p)
-        _bound(pid, track_path)
-        track = json.loads(track_path.read_text())
-        native = track.get('H', track.get('camera'))
-        if not isinstance(native, list) or len(native) != p['frames']:
-            raise ValueError('The camera track does not cover this source shot.')
-        matrices = []
-        for value in native:
-            if isinstance(value, list) and len(value) == 4:
-                a, b, tx, ty = value
-                matrix = np.array([[a, -b, tx], [b, a, ty], [0, 0, 1]], dtype=np.float64)
-            else:
-                matrix = np.asarray(value, dtype=np.float64).reshape(3, 3)
-            if not np.all(np.isfinite(matrix)) or abs(np.linalg.det(matrix)) < 1e-12:
-                raise ValueError('The camera track contains an invalid transform.')
-            matrices.append(matrix)
-        scale = np.diag([960 / track.get('w', 960), 540 / track.get('h', 540), 1.])
-        inverse_ref = np.linalg.inv(matrices[ref])
-        homographies = [(scale @ m @ inverse_ref @ np.linalg.inv(scale)).ravel().tolist() for m in matrices]
+        track_path = None if projects.camera_locked(p) else _bound(pid, projects.track_file(p))
+        homographies = [m.ravel().tolist() for m in post_holdouts.camera_matrices(p, 960, 540, track_path=track_path, reference_frame=ref)]
         mattes = []
         for entry in cfg['mattes']:
             if entry.get('static') and entry.get('reference_frame', ref) != ref:

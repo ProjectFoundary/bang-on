@@ -15,7 +15,7 @@ export type { VolumeFXScene, VolumeMatte, DepthReference } from './volumeGeometr
 export type VolumeElementOptions = { w:number;h:number;n:number;x:number;y:number;start:number;end:number;size:number;seed:number;wind?:number;
   windVector?:number[];windResponse?:number;windDispersion?:number;tracking?:'camera'|'features'|'screen';
   angle?:number; color?:string;path?:Float32Array;bounds?:{x:number;y:number;width:number;height:number};
-  onsetSeconds?:number;durationSeconds?:number;sourceTimeSeconds?:number;depthOffset?:number;direction?:number[];quality?:'draft'|'high';resolution?:number;matteIds?:string[];shading?:number;density?:number;brightness?:number;lightIntensity?:number;fillIntensity?:number;lightRotation?:number;lightElevation?:number;compositeOnly?:boolean };
+  onsetSeconds?:number;durationSeconds?:number;sourceTimeSeconds?:number;depthOffset?:number;direction?:number[];quality?:'draft'|'high';resolution?:number;matteIds?:string[];shading?:number;density?:number;brightness?:number;lightIntensity?:number;fillIntensity?:number;lightRotation?:number;lightElevation?:number;compositeOnly?:boolean;interactive?:boolean };
 export type VolumeElementFrame = { element:HTMLCanvasElement; composite:HTMLCanvasElement; alpha:HTMLCanvasElement; visibility:HTMLCanvasElement;
   rgb:HTMLCanvasElement; light:HTMLCanvasElement|null;shadow:HTMLCanvasElement|null;metadata:Record<string,unknown> };
 
@@ -92,9 +92,11 @@ function presetFor(kind){
 }
 function create(effectId,kind,o,width,height,owner){
   initialize();const s=o.matteIds?{...scene!,mattes:scene!.mattes.filter(m=>o.matteIds!.includes(m.id))}:scene!;const {name,p,source,hq,grenade}=presetFor(kind);
-  if(hq&&!supportsFineParticles())throw new Error('High-quality plume requires floating-point smoke-particle support on this WebGL2 GPU.');
+  const quick=hq&&o.interactive&&o.quality==='draft';
+  if(hq&&!quick&&!supportsFineParticles())throw new Error('High-quality plume requires floating-point smoke-particle support on this WebGL2 GPU.');
   const maskedPressure=s.mattes.some(m=>m.kind==='hard'&&m.role!=='holdout'),multigrid=hq&&!maskedPressure;
   const onset=o.onsetSeconds??o.start/s.fps,anchor=sourceFrameAt(s,Math.max(0,onset));
+  const duration=o.durationSeconds??Math.max(.1,(o.end-o.start+1)/s.fps);
   let x=o.x/Math.max(1,o.w)*s.width,y=o.y/Math.max(1,o.h)*s.height;
   // Existing adapter coordinates may belong to a padded tracked simulation box.
   if(o.bounds){x=(o.x/o.w*o.bounds.width+o.bounds.x)/960*s.width;y=(o.y/o.h*o.bounds.height+o.bounds.y)/540*s.height;}
@@ -107,7 +109,8 @@ function create(effectId,kind,o,width,height,owner){
   const distance=emitterDepth(s,anchor,x,y,safeOffset,o.depthOffset??0),position=unproject(s,x,y,distance),unit=s.height*distance/(s.camera.focalY??s.camera.focalPixels);
   const R=unit*Math.sqrt(scale),a=(o.angle??0)*Math.PI/180,windDriven=kind==='explosion'||kind==='fire'||kind.startsWith('smoke_')||kind.startsWith('kfx_');
   const inst={...p.defaults,id:1,preset:name,enabled:true,name:effectId,intensity:1,heat:1,gravityMul:1,speedMul:1,fineGrain:1,full:true,area:.8,sizeMul:1,depth:.7,gust:.6,ridge:20,width:p.defaults.width??.35,length:.9,spreadMul:1,lift:0,
-    frame:onset*24,duration:(o.durationSeconds??Math.max(.1,(o.end-o.start+1)/s.fps))*24,scale,seed:o.seed,w:position,wscale:unit,wdir:o.direction??(windDriven?[0,1,0]:[Math.sin(a),Math.cos(a),0]),
+    frame:onset*24,duration:duration*24,scale,seed:o.seed,w:position,wscale:unit,wdir:o.direction??(windDriven?[0,1,0]:[Math.sin(a),Math.cos(a),0]),
+    ...(quick&&onset<-2?{simStartFrame:-48}:{}),
     color:o.color??p.defaults.color,facing:p.defaults.facing??0,floor:false,debrisMul:0,sparksMul:0,flash:false,
     ...(hq?{volumeFXShader:volumeShader}:source==='groundfire'?{}:{volumeFXBox:{min:[position[0]-.65*R,position[1]-.45*R,position[2]-.65*R],size:[1.3*R,1.65*R,1.3*R]}})};
   const shading=Math.max(0,Math.min(2,o.shading??1));
@@ -118,7 +121,10 @@ function create(effectId,kind,o,width,height,owner){
   const postHoldoutIds=s.mattes.filter(m=>m.holdoutPost&&m.role!=='collide').map(m=>m.id);
   const c={effectId,kind,inst,hq,grenade,preset:p,options:o,tracking,owner,postHoldoutIds,origin:position,emitterWorld:position,windWorld,windMagnitude,windDispersion,windResponse:windMagnitude>0?(o.windResponse??stockScene.drag):0,quality:o.quality??'high',sourceScene:s,scene:{...stockScene,wind:o.wind??0,multigrid,lightCol:s.lighting?.key??(hq?stockScene.lightCol:'#ddd5c7'),ambCol:s.lighting?.ambient??(hq?stockScene.ambCol:'#69726b'),ambient:Math.min(1,(s.lighting?.intensity??(hq?stockScene.ambient:.45))+.55*(1-shading)),shadow:(s.lighting?.shadow??1)*shading},
     cam:{mode:'3d',data:{frames:new Map([[0,{t:[0,0,0],r:[0,0,0],vfov:null}]]),nums:[0]},rotOrder:'ZXY',fovMode:'lens',focal:1,haperture:s.width/s.camera.focalPixels,vaperture:s.height/(s.camera.focalY??s.camera.focalPixels),
-      res:o.resolution??(o.quality==='draft'?(source==='groundfire'?64:32):hq||source==='groundfire'?128:64),groundY:-1000,adaptive:false,multigrid,mc:true,rk2:true,projectAfter:true,substeps:hq?p.smoke.volume.substeps:4,detail:hq?.8:.25,smooth:true,fast:false,sunAz:s.lighting?.azimuth??(hq?120:-25),sunEl:s.lighting?.elevation??(hq?40:60),tune:{jacobi:hq?20:24,curl:.8,turb:1.8,sharp:0}},
+      // Authored solid slabs need enough cells between the emitter and the
+      // surface. At 32, a conservative roof and walls can seal that gap.
+      res:o.resolution??(o.quality==='draft'?(source==='groundfire'||s.mattes.some(m=>m.cameraBox&&m.role!=='holdout')?64:32):hq||source==='groundfire'?128:64),groundY:-1000,adaptive:false,multigrid,mc:true,rk2:true,projectAfter:true,
+      ...(quick?{smokeParticles:false,cachedDetail:false}:{}),substeps:quick?2:hq?p.smoke.volume.substeps:4,detail:quick?.35:hq?.8:.25,smooth:true,fast:false,sunAz:s.lighting?.azimuth??(hq?120:-25),sunEl:s.lighting?.elevation??(hq?40:60),tune:{jacobi:quick?10:hq?20:24,curl:.8,turb:1.8,sharp:0}},
     plate:{kind:'bang-volume',w:s.width,h:s.height,first:0,last:Math.ceil((o.n/s.fps)*24)},sim:null,frame:null,
     target:makeTargets(width,height,false),element:canvas(width,height),composite:canvas(width,height),alpha:canvas(width,height),visibility:canvas(width,height),rgb:canvas(width,height)};
   return scoped(c,()=>{
@@ -244,7 +250,8 @@ function capture(c,destination,held,frame){
 }
 export function renderVolumeElement(effectId:string,kind:string,o:VolumeElementOptions,sourceFrame:number,owner='preview'):VolumeElementFrame|null{
   if(!scene)return null;
-  const width=Math.max(1,Math.round(o.w)),height=Math.max(1,Math.round(o.h)),key=`${owner}:${effectId}`;
+  const previewScale=kind==='smoke_plume_hq'&&o.interactive&&o.quality==='draft'?.5:1;
+  const width=Math.max(1,Math.round(o.w*previewScale)),height=Math.max(1,Math.round(o.h*previewScale)),key=`${owner}:${effectId}`;
   const {sourceTimeSeconds,path,density,brightness,lightIntensity,fillIntensity,lightRotation,lightElevation,compositeOnly,...stableOptions}=o;
   const recipe=JSON.stringify([scene.key,kind,stableOptions,path?sourcePathHash(path):null]);let c=cache.get(key);
   if(c&&c.recipe!==recipe){destroy(c);cache.delete(key);c=null;}
@@ -274,8 +281,19 @@ export function renderVolumeElement(effectId:string,kind:string,o:VolumeElementO
     // The viewer consumes only the composited canvas. A depth scene with native
     // volume holdouts can stay on the GPU and skip two readbacks, three image
     // allocations and the full-canvas RGB/alpha/visibility conversion loop.
-    if(compositeOnly&&!flat&&!c.postHoldoutIds.length&&!c.screenHoldoutScene.mattes.length){
-      capture(c,c.composite,true,sourceFrame);c.frame=sourceFrame;c.sampleTime=seconds;c.outputsComplete=false;return;
+    if(compositeOnly&&!c.postHoldoutIds.length&&!c.screenHoldoutScene.mattes.length&&
+       (!flat||!c.sourceScene.mattes.some(m=>m.role!=='collide'))){
+      capture(c,c.composite,!flat,sourceFrame);c.frame=sourceFrame;c.sampleTime=seconds;c.outputsComplete=false;return;
+    }
+    if(compositeOnly&&flat){
+      capture(c,c.composite,false,sourceFrame);
+      const ctx=c.composite.getContext('2d'),pixels=ctx.getImageData(0,0,width,height);
+      for(let i=0;i<width*height;i++){
+        const a=4*i+3;
+        if(pixels.data[a])pixels.data[a]*=fallbackVisibility(c.sourceScene,sourceFrame,(i%width+.5)/width*scene!.width-.5,
+          (Math.floor(i/width)+.5)/height*scene!.height-.5,-c.emitterWorld[2],c.owner==='capture'?'exclude':'all');
+      }
+      ctx.putImageData(pixels,0,0);c.frame=sourceFrame;c.sampleTime=seconds;c.outputsComplete=false;return;
     }
     capture(c,c.element,false,sourceFrame);if(!flat)capture(c,c.composite,true,sourceFrame);
     const raw=c.element.getContext('2d').getImageData(0,0,width,height),held=flat?new ImageData(new Uint8ClampedArray(raw.data),width,height):c.composite.getContext('2d').getImageData(0,0,width,height);

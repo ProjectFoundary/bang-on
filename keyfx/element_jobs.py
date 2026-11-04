@@ -23,6 +23,7 @@ KINDS = {'explosion', 'fire', 'smoke_white', 'smoke_plume', 'smoke_plume_hq', 's
 SMOKE_KINDS = {'smoke_white', 'smoke_plume', 'smoke_plume_hq', 'smoke_grenade'}
 SIMULATION_REVISION = 'matte2d-depth3d-wind-dispersion-v3'
 DEPTH_HOLDOUT_VISIBILITY_PROFILE = 'camera-depth-pixel-foreground-v3'
+AUTHORED_BOX_COLLISION_PROFILE = 'conservative-voxel-overlap-v1'
 SIMULATION_PROFILES = {'smoke_plume_hq':'squib-plume-hq-r18-v1', 'smoke_grenade':'bang-smoke-grenade-v1', 'fire':'squib-groundfire-v1'}
 DEFAULT = {'duration_s': 2., 'cadence': 10, 'frame_blend': 10, 'guide_style': 'painted', 'guide_displacement': 0., 'guide_displacement_blur': 32., 'light_intensity': 1., 'light_rotation': 0., 'light_elevation': 60., 'blur': 2., 'shading': 1., 'seed': 42,
            'opacity': 1., 'gain': 1., 'light': 0., 'shadow': 0., 'depth_offset': 0., 'colliders': [], 'wind_dispersion': 1.,
@@ -87,11 +88,26 @@ def source_profile(p):
             'colour': {'transfer': 'srgb', 'primaries': 'bt709', 'matrix': 'gbr', 'range': 'pc'}}
 
 
+def uses_authored_box_collision(g, assigned):
+    mode = g.get('collision_mode', 'depth3d' if g.get('depth') else 'matte2d')
+    return mode == 'depth3d' and any(
+        m['id'] in assigned and m.get('cameraBox') and m.get('kind', 'hard') == 'hard'
+        and m.get('role', 'both') != 'holdout'
+        and not any(m.get(key) for key in ('depthOffset', 'colliderBlur', 'colliderDisplacement'))
+        for m in g.get('mattes', [])
+    )
+
+
 def generation_signature(p, e):
+    from . import projects
     cfg = effect_config(p, e)
     g = geometry.validate(p.get('geometry', {}), p['frames'])
     g, simulation_ids = post_holdouts.simulation_geometry(g,cfg['colliders'])
     fields = {k: e.get(k) for k in ('id', 'preset', 'keys', 'anchors', 'size', 'angle', 'strength', 'tracking')}
+    if projects.camera_locked(p):
+        fields['camera_motion'] = 'locked-camera-v1'
+    if uses_authored_box_collision(g, simulation_ids):
+        fields['authored_box_collision'] = AUTHORED_BOX_COLLISION_PROFILE
     if e.get('preset') in SIMULATION_PROFILES:
         fields['simulation_profile'] = SIMULATION_PROFILES[e['preset']]
     if e.get('preset') == 'smoke_plume_hq' and any(

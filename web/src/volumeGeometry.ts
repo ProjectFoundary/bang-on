@@ -238,12 +238,24 @@ export function validateVolumeScene(s:VolumeFXScene) {
 export function voxelizeScene(scene:VolumeFXScene,g:VolumeGrid,frame:number) {
   const solid=new Uint8Array(g.aw*g.ah),holdout=new Uint8Array(solid.length),motion=new Float32Array(solid.length*4);
   const prior=Math.max(0,frame-1),dt=Math.max(1/120,sourceTime(scene,frame)-sourceTime(scene,prior));
-  const planes=scene.mattes.map(m=>({m,current:colliderPlane(scene,m,frame),previous:colliderPlane(scene,m,prior)}));
   const [nx,ny,nz]=g.dim,flat=scene.collisionMode==='matte2d',flatDepth=depthAt(scene,scene.width/2,scene.height/2);
+  const exact=flat?[]:scene.mattes.filter(m=>m.cameraBox&&m.kind==='hard'&&m.role!=='holdout'&&!m.depthOffset&&!m.colliderBlur&&!m.colliderDisplacement);
+  const boxes=exact.map(m=>{
+    const box=m.cameraBox!;
+    return box.axes.map((axis,i)=>({axis,offset:axis.reduce((sum,q,k)=>sum+q*(g.boxMin[k]+g.vox*.5-box.center[k]),0),
+      // A voxel whose centre misses a thin slab can still overlap it. Use
+      // the voxel's extent along each box axis to keep the roof continuous.
+      bound:box.halfSize[i]+g.vox*.5*axis.reduce((sum,q)=>sum+Math.abs(q),0)}));
+  });
+  const planes=scene.mattes.filter(m=>!exact.includes(m)&&!(m.cameraBox&&!flat&&m.role==='holdout'))
+    .map(m=>({m,current:colliderPlane(scene,m,frame),previous:colliderPlane(scene,m,prior)}));
   for(let z=0;z<nz;z++)for(let y=0;y<ny;y++)for(let x=0;x<nx;x++){
+    const index=gridIndex(g,x,y,z);
+    if(boxes.some(box=>box.every(({axis,offset,bound})=>Math.abs(offset+g.vox*(x*axis[0]+y*axis[1]+z*axis[2]))<=bound)))solid[index]=255;
+    if(!planes.length)continue;
     const p=g.boxMin.map((q,a)=>q+([x,y,z][a]+.5)*g.vox),distance=-p[2];
     if(distance<=.01)continue;
-    const [opticalU,opticalV]=project(scene,p),[u,v]=flat?project(scene,[p[0],p[1],-flatDepth]):[opticalU,opticalV],index=gridIndex(g,x,y,z);
+    const [opticalU,opticalV]=project(scene,p),[u,v]=flat?project(scene,[p[0],p[1],-flatDepth]):[opticalU,opticalV];
     for(const {m,current,previous:previousPlane} of planes){
       const cover=(plane:typeof current,x:number,y:number)=>sample(plane.values,plane.width,plane.height,(x+.5)*plane.width/scene.width-.5,(y+.5)*plane.height/scene.height-.5);
       const optical=m.holdoutPost||m.holdoutScreen?0:holdoutCoverage(scene,m,frame,opticalU,opticalV),rawFront=matteDepth(scene,m,opticalU,opticalV)+(m.depthOffset??0);

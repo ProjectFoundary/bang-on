@@ -72,6 +72,6 @@ export function viewerPathKey(paths:Map<string,Float32Array>){
   });
 }
 export function viewerVisualKey(p:Project,presets:Record<string,Preset>,paths:Map<string,Float32Array>,quality:string,solo:string|null,volumeKey:string|null,colliderKey:string|null,assetRevision:number){
-  return JSON.stringify([viewerPlateKey(p),p.settings,p.effects,p.geometry,p.lighting,p.flashes,
+  return JSON.stringify([viewerPlateKey(p),p.camera_mode,p.settings,p.effects,p.geometry,p.lighting,p.flashes,
     p.effects.map((e:Effect)=>presets[e.preset]),viewerPathKey(paths),quality,solo,volumeKey,colliderKey,assetRevision]);
 }

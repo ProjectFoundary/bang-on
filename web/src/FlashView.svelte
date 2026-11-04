@@ -129,6 +129,8 @@
             if (now < onset || now >= onset + (e.element?.duration_s ?? 2)) continue;
             const options = volumeOptions(project, e, frame, paths, W, H);
             options.quality = quality;
+            options.compositeOnly = true;
+            options.interactive = true;
             const result = renderVolumeElement(e.id, kind, options, frame, volumeOwner);
             if (result) {g.save();try{g.globalAlpha=e.element?.opacity??1;g.filter=`brightness(${e.element?.gain??1})`;g.drawImage(result.composite,0,0,W,H);}finally{g.restore();}}
           }

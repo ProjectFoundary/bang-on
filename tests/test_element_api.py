@@ -69,6 +69,36 @@ def test_geometry_import_patch_and_reference_relative_camera(api):
     assert np.all(image == 255)
     assert hashlib.sha256(original.read_bytes()).hexdigest() == before, 'Preview modified original16-bit matte'
 
+def test_locked_camera_changes_scene_and_take_identity_without_replacing_feature_tracks(api):
+    from keyfx.server import app
+
+    _, root = api
+    original = root / 'track_plate.json'
+    track = json.loads(original.read_text())
+    track.update(q=1, tracks=[[0, 10, 20, 21, 20, 31, 20]])
+    original.write_text(json.dumps(track))
+    before = original.read_bytes()
+    p = projects.add_effect('shot', 'smoke_plume_hq', 0, .5, .6)
+    e = p['effects'][0]
+    auto = element_jobs.generation_signature(p, e)
+    auto_render = projects.effect_signature(p)
+    base = '/api/projects/shot'
+    client = TestClient(app, base_url='http://127.0.0.1')
+    assert client.get(base+'/geometry/scene').json()['camera']['homographies'][2][2] == 40
+    assert client.patch(base, json={'camera_mode':'locked'}).status_code == 200
+    locked = client.get(base+'/track').json()
+    assert locked['camera'] == [[1,0,0,0]]*3 and locked['tracks'] == track['tracks']
+    assert client.get(base+'/geometry/scene').json()['camera']['homographies'] == [[1,0,0,0,1,0,0,0,1]]*3
+    p = projects.load('shot')
+    assert element_jobs.generation_signature(p,e) != auto
+    assert projects.effect_signature(p) != auto_render
+    assert client.patch(base, json={'camera_mode':'auto'}).status_code == 200
+    assert client.get(base+'/track').json() == track
+    p = projects.load('shot')
+    assert element_jobs.generation_signature(p,e) == auto
+    assert projects.effect_signature(p) == auto_render
+    assert original.read_bytes() == before
+
 
 def test_geometry_cannot_replace_asset_paths_or_mutate_during_generation(api, monkeypatch):
     client, _ = api

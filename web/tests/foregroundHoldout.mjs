@@ -44,4 +44,13 @@ assert.equal(K.fallbackVisibility(precise,1,48,34,10),1,'The camera transform mu
 assert.equal(K.fallbackVisibility(precise,1,70,32,10),1,'No coarse mask halo remains outside the tracked pole.');
 for(const extra of [{depth:10},{depth:14},{role:'collide'},{holdoutPost:true}])assert(!K.screenForegroundScene({...scene,mattes:[{...matte,...extra}]},grid).mattes[0].holdoutScreen);
 assert.equal(K.screenForegroundScene({...scene,collisionMode:'matte2d'},grid).mattes[0],matte);
+const slab={...matte,role:'both',cameraBox:{center:[0,0,-10],axes:[[1,0,0],[0,1,0],[0,0,1]],halfSize:[.7,.7,.01]}};
+const slabFields=K.voxelizeScene({...scene,mattes:[slab]},grid,0);
+// The slab lies between Z voxel centres; two touching cells prevent a gap.
+assert.equal(slabFields.solid[K.gridIndex(grid,8,4,7)],255);
+assert.equal(slabFields.solid[K.gridIndex(grid,8,4,8)],255);
+assert.equal(slabFields.solid[K.gridIndex(grid,8,4,6)],0);
+assert.equal(slabFields.solid[K.gridIndex(grid,0,4,7)],0);
+assert(!slabFields.holdout.some(Boolean),'The CG slab still uses exact ray depth for optical visibility.');
+assert(!K.voxelizeScene({...scene,mattes:[{...slab,role:'holdout'}]},grid,0).solid.some(Boolean));
 console.log('Foreground holdout geometry passes: outside-box occlusion, front/back ordering, finite collision, roles, soft edges and separate post mattes.');

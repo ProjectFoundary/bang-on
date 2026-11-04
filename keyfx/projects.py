@@ -127,6 +127,9 @@ def track_file(p: dict) -> Path:
     b = environment_stage(p) if base_name(p) == 'environment' else 'plate'
     return track.ensure(pdir(p['id']), stage_dir(p, b), b.replace(':', '_'), p['frames'])
 
+def camera_locked(p: dict) -> bool:
+    return p.get('mode') == 'plate' and p.get('camera_mode') == 'locked'
+
 
 def environment_stage(p: dict) -> str | None:
     return f"environment:{p['environment']}" if p.get('environment') else None
@@ -215,12 +218,18 @@ def effect_signature(p: dict) -> str:
         from . import lighting_integration
         light=lighting_integration.selected_signature(p)
         if light is not None:data.append(['signed_lighting',light])
+        if camera_locked(p):data.append('locked-camera-v1')
+        geometry_settings = p.get('geometry', {})
+        if any(element_jobs.uses_authored_box_collision(geometry_settings, e.get('element', {}).get('colliders', []))
+               for e in p.get('effects', [])):
+            data.append(element_jobs.AUTHORED_BOX_COLLISION_PROFILE)
         return element_jobs.digest(data)
     data = [p.get('shot'), p.get('effects', []), effect_settings(p), image_models.selected(p, 'polish'), VIDEO_PROFILE,
             'sparse-explosion-guides-v1']
     recipe = collider_recipe(p)
     if recipe is not None:
         data.append(recipe)
+    if camera_locked(p):data.append('locked-camera-v1')
     return hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest()
 
 

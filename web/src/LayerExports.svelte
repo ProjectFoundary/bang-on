@@ -1,7 +1,7 @@
 <script lang="ts">
   import type {Project,Render} from './api';
   import {elementRequest} from './elementFlow';
-  let {project,render,disabled=false}:{project:Project;render?:Render;disabled?:boolean}=$props();
+  let {project,render,disabled=false,needsApproval=false}:{project:Project;render?:Render;disabled?:boolean;needsApproval?:boolean}=$props();
   let combined=$state(true),lighting=$state(true),elements=$state(true),working=$state(false),error=$state(''),output=$state<{url:string;id:string}|null>(null),progress=$state('');
   async function build(){
     const pid=project.id;working=true;error='';output=null;
@@ -24,9 +24,10 @@
   <label class="check"><input type="checkbox" bind:checked={elements} disabled={disabled||working}/> Each LTX element with alpha · RGBA EXR</label>
   <p class="small muted">Native resolution and frame timing, with a colour/alpha manifest. Element EXRs are premultiplied linear RGB. Muzzle edits remain in the combined final. An ungenerated lighting pass is labelled absent.</p>
   {#if render?.review_only}<p class="small muted">Exports this review selection; approval stays manual.</p>{/if}
-  <button disabled={disabled||working||!combined&&!lighting&&!elements} onclick={build}>Prepare selected exports · local/free</button>
+  {#if needsApproval}<p class="small muted">Approve each current element in Effects to unlock layer export.</p>{/if}
+  <button disabled={disabled||working||needsApproval||!combined&&!lighting&&!elements} onclick={build}>Prepare selected exports · local/free</button>
   {#if working}<p class="small" role="status">{progress||'Preparing export…'}</p>{/if}
   {#if error}<p class="small err" role="alert">{error}</p>{/if}
-  {#if output}<a class="download primary" href={output.url} download>Download layer package · ZIP</a>{/if}
+  {#if output&&!needsApproval}<a class="download primary" href={output.url} download>Download layer package · ZIP</a>{/if}
 </section>
 <style>.block{display:grid;gap:13px;padding:18px;border-bottom:1px solid var(--line)}h2,p{margin:0}.check{display:flex;gap:8px;align-items:center}.err{color:var(--danger)}</style>

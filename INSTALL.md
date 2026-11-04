@@ -71,10 +71,12 @@ Both **Fluid RGB** and **AlphaGen** must be ready before generating an element. 
 
 ## First effect
 
-1. Open an included example, or create a **Keep original footage** shot.
+1. Open an included example, or choose **New shot → Real footage** and import a clip.
+   For a tripod shot or static render, choose **Scene → Camera motion → Locked camera**. Moving object tracks and mattes still work.
 2. Add **Smoke plume (HQ)**, **Smoke grenade**, **Explosion**, or **Fire** and click the plate to place it.
 3. Adjust timing, size, wind and lighting; assign interaction only if needed.
 4. Play the simulation and **Prepare guide**. Inspect the actual guide before generation.
+   **Fast** is the default for layout and playback. Choose **High** to inspect the full simulation. Guide capture always uses the full simulation.
 5. Generate RGB + alpha, review the result, and explicitly approve the version you want.
 6. Continue to Finish and export a composite or layers.
 

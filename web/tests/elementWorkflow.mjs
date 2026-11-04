@@ -30,7 +30,7 @@ project.element_takes.push({effect_id:'fire',status:'done',approved:true,current
 assert.equal(approvedEffectCount({effects:[]}),0);
 assert.deepEqual(matteTrackingBody('Actor',true,.2,.7),{kind:'matte',points:[{frame:0,person:0,x:.2,y:.7,label:1}],name:'Actor',soft:true});
 assert.deepEqual(finishTakePresentation({source_current:true},true,true),{heading:'CURRENT TAKE',notice:''});
-assert.deepEqual(finishTakePresentation(undefined,true,false),{heading:'CURRENT TAKE',notice:''});
+assert.deepEqual(finishTakePresentation(undefined,true,false),{heading:'SOURCE PLATE',notice:''});
 const post=finishTakePresentation({kind:'effect',source_current:false},true,true);
 assert.equal(post.heading,'EARLIER TAKE');assert(post.notice.includes('Update composite from cached elements'));
 const physical=finishTakePresentation({kind:'effect',source_current:false},true,false);

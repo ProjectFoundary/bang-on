@@ -135,7 +135,7 @@
           for(const e of previewEffects){
             const kind=volumeKind(e),start=Math.max(0,elementTime(project,elementOnset(e)));
             if(!kind||time<start||time>=start+(e.element?.duration_s??2)-1e-9)continue;
-            const options=volumeOptions(project,e,frame,paths,W,H);options.quality=quality;options.compositeOnly=true;
+            const options=volumeOptions(project,e,frame,paths,W,H);options.quality=quality;options.compositeOnly=true;options.interactive=true;
             const result=renderVolumeElement(e.id,kind,options,frame,'preview');
             if(result){g.save();try{g.globalAlpha=e.element?.opacity??1;g.filter=`brightness(${e.element?.gain??1})`;g.drawImage(result.composite,0,0,W,H);}finally{g.restore();}}
           }
@@ -252,7 +252,11 @@
 
   const cursor = $derived(armed ? 'crosshair' : hover ? (hover.part === 'aim' ? 'grab' : 'move') : 'default');
   const hint = $derived.by(() => {
-    if (armed) return `Click where the ${presets[armed]?.name.toLowerCase()} goes — it starts on this frame and tracks with the shot`;
+    if (armed) {
+      const preset=presets[armed];
+      const timing=(preset?.default_start_frame??0)<0?'already running at frame 0':'starts on this frame';
+      return `Click to place ${preset?.name??'the effect'} · ${timing}`;
+    }
     const e = project.effects.find((q) => q.id === selectedId);
     if (!e) return project.effects.length ? 'Click a ring to select · space plays' : 'Pick an effect, then click on the shot';
     const d = presets[e.preset]?.direction;
