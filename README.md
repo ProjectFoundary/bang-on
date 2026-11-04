@@ -4,15 +4,15 @@
 
 Block the action in a lightweight browser simulation. Place smoke or explosions, adjust the wind and lighting, and test holdouts and colliders before spending compute on realism. Generate isolated LTX elements, extract AlphaGen mattes, and take the layers into your comp. Place muzzle flashes on exact firing frames with localized interactive lighting.
 
-**Current release: v1.0.1.** The application code is [MIT licensed](LICENSE). The Python package and command retain the name `keyfx` for compatibility.
+**Current release: v1.0.2.** The application code is [MIT licensed](LICENSE). The Python package and command retain the name `keyfx` for compatibility.
 
-[![Watch the Bang On demo](demo/poster.jpg)](https://github.com/ProjectFoundary/bang-on/releases/download/v1.0.1/Bang_On_demo_v1.mp4)
+[![Watch the Bang On demo](demo/poster.jpg)](https://github.com/ProjectFoundary/bang-on/releases/download/v1.0.2/Bang_On_demo_v1.mp4)
 
-[Download/watch the 1:43 demo](https://github.com/ProjectFoundary/bang-on/releases/download/v1.0.1/Bang_On_demo_v1.mp4) · [Get v1.0.1](https://github.com/ProjectFoundary/bang-on/releases/tag/v1.0.1) · [Installation guide](INSTALL.md)
+[Download/watch the 1:43 demo](https://github.com/ProjectFoundary/bang-on/releases/download/v1.0.2/Bang_On_demo_v1.mp4) · [Get v1.0.2](https://github.com/ProjectFoundary/bang-on/releases/tag/v1.0.2) · [Installation guide](INSTALL.md)
 
 ## Install
 
-The [v1.0.1 release](https://github.com/ProjectFoundary/bang-on/releases/tag/v1.0.1) includes a wheel with the interface and editable plane/house examples. Installing the wheel needs Python 3.12, FFmpeg/FFprobe and a WebGL2 browser; Node is unnecessary. Follow [INSTALL.md](INSTALL.md) for macOS/Linux and Windows commands.
+The [v1.0.2 release](https://github.com/ProjectFoundary/bang-on/releases/tag/v1.0.2) includes a wheel with the interface and editable plane/house examples. Installing the wheel needs Python 3.12, FFmpeg/FFprobe and a WebGL2 browser; Node is unnecessary. Follow [INSTALL.md](INSTALL.md) for macOS/Linux and Windows commands.
 
 For a source checkout, install [uv](https://docs.astral.sh/uv/getting-started/installation/), Node 20+ and FFmpeg, then:
 

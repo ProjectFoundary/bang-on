@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.0.2 — 2026-11-04
+
+- Add a **Depth convention** control for imported depth PNGs in **Effects → Interaction → Depth 3D**. Choose **Bright is far** for distance passes like the Blender depth in the house fireball example.
+- Correct an existing depth pass in place. The live preview uses the revised interpretation with the same depth pixels and assigned objects.
+
 ## v1.0.1 — 2026-11-04
 
 - Restore float OpenEXR export with `opencv-python-headless<5` and a regenerated lockfile.

@@ -1,6 +1,6 @@
 # v1 limitations
 
-Version 1.0.1. Inspect generated results before delivery.
+Version 1.0.2. Inspect generated results before delivery.
 
 - Local smoke/fire preview requires WebGL2 and a suitable browser/GPU. Performance varies by hardware; guide capture can run slower than playback.
 - Source imports can cover up to60seconds. Individual generated element windows are limited to about5seconds at24fps. Model sampling/resolution limit generated detail even when native source timing and output dimensions are retained.
@@ -10,7 +10,7 @@ Version 1.0.1. Inspect generated results before delivery.
 - Supported native colour paths are explicit. The legal-range RGB working copy clips out-of-range decoded RGB; strict mode can reject it. Unsupported Log/RAW/ICC/dynamic-HDR or other source encodings may need conversion before import. Original encoded uploads are retained.
 - Lighting differences, glow and shadow are compositing approximations. Optional generated scene/actor lighting can change apparent texture or introduce residue.
 - Nuke/After Effects adapters and ProRes element packaging are not shipped. Float OpenEXR layer export and browser/native movie outputs are available as described in the export guide.
-- Version 1.0.1 pins OpenCV below 5 to restore float EXR support. Linux and macOS CI include export/lighting regression coverage; physical Windows/Linux GPU acceptance remains outstanding.
+- Bang On pins OpenCV below 5 to restore float EXR support. Linux and macOS CI include export/lighting regression coverage; physical Windows/Linux GPU acceptance remains outstanding.
 - macOS fresh-environment installation is checked for this release. Separate physical-machine and Windows/Linux GPU acceptance is not complete. Unit tests use synthetic provider transport; live access and visual quality vary by installation.
 - This is a local single-user server. It is not an authenticated multi-user public service. Keep its default loopback binding for normal desktop use.
 

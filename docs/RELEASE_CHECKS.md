@@ -1,3 +1,11 @@
+# Release checks
+
+## v1.0.2 — 4 November 2026
+
+- Verified the fireball roof holdout in a fresh browser shot using the bundled house plate and Blender distance PNG. With **Bright is far** selected, the roof hides the portion of the fireball behind it.
+- Opened the bundled house shot from the installed v1.0.2 wheel and changed the depth convention in the browser. The setting saved with the original depth image and all 11 mattes intact.
+- All 641 backend tests, six frontend suites, the production frontend build and clean installed-wheel acceptance passed. The runtime requirements match v1.0.1. See the [hosted builds](https://github.com/ProjectFoundary/bang-on/actions).
+
 # v1.0.1 release checks
 
 Release preparation: 4 November 2026. The repository URL and approved 1:43 demo remain the same.

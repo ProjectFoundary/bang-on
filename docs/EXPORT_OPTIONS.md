@@ -1,4 +1,4 @@
-# Current delivery — Bang On v1.0.1
+# Current delivery — Bang On v1.0.2
 
 The Export layers panel writes a cached ZIP with the selected native combined movie and SDR preview, signed light/shadow EXRs, and individual float RGBA EXR sequences for LTX elements. The manifest describes native timestamps, colour and alpha association. Export does not submit generation. The original encoded upload remains separate and intact.
 
