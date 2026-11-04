@@ -6,6 +6,8 @@ Import a Keep original footage shot. Original encoded uploads remain stored. Sup
 
 You may provide mattes/depth or generate them through the configured backend. A **holdout** controls visibility. A **collider** changes simulated flow. An object can do either or both, independently per effect. 2D matte mode needs no depth. Depth 3D reconstructs approximate finite surfaces from depth and selected objects; it is not a calibrated moving mesh solve.
 
+For a depth PNG, open **Effects → Interaction**, choose **Depth 3D**, and set **Depth convention** to match the file. Choose **Bright is far** for a normalized distance pass like the house example’s Blender depth. The control also updates a loaded pass. Use **Select object from depth** to pick a region, set its role, and assign it to the effect. If the selection spills onto a nearby surface, restrict the region or import a separate object matte. **Collider + holdout** both redirects the fluid and hides the portion behind the surface. The bundled house shot also includes hand-authored CG solids, so depth-picked surfaces in a fresh shot will approximate its interaction.
+
 ## Local simulation and guide
 
 Choose an effect, click to place it, and adjust size, timing, direction, wind and lighting. Smoke density changes optical thickness; brightness changes simulated illumination. Review the action locally before submitting a model job. Source tracking is independent of which mattes collide with the effect.

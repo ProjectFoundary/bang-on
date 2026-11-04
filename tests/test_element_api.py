@@ -85,6 +85,30 @@ def test_geometry_cannot_replace_asset_paths_or_mutate_during_generation(api, mo
     assert client.post('/api/projects/shot/elements/composite').status_code == 409
 
 
+def test_depth_convention_updates_scene_without_replacing_depth_pixels(api):
+    client, root = api
+    url = '/api/projects/shot/geometry'
+    depth = png(np.arange(12, dtype=np.uint16).reshape(3, 4) * 5000)
+    imported = client.post(url + '/depth', files={'file': ('depth.png', depth, 'image/png')})
+    assert imported.status_code == 200
+    asset = imported.json()['asset']
+    before = client.get(url + '/scene').json()
+    assert before['depth']['kind'] == 'inverse'
+
+    stale = client.patch(url, json={'depth_interpretation': {'id': 'replaced', 'kind': 'distance'}})
+    assert stale.status_code == 409
+    assert client.get(url + '/scene').json()['key'] == before['key']
+    updated = client.patch(url, json={'depth_interpretation': {'id': asset['id'], 'kind': 'distance'}})
+    assert updated.status_code == 200
+    assert updated.json()['depth'] == {**asset, 'kind': 'distance'}
+
+    after = client.get(url + '/scene').json()
+    assert after['key'] != before['key']
+    assert after['depth'] == {**before['depth'], 'kind': 'distance'}
+    stored = projects.load('shot')['geometry']['depth']
+    assert hashlib.sha256((root / stored['file']).read_bytes()).hexdigest() == asset['sha256']
+
+
 def test_static_matte_repeats_but_moving_matte_never_silently_clamps(api):
     client, root = api
     directory = root / 'geometry' / 'motion'; directory.mkdir(parents=True)

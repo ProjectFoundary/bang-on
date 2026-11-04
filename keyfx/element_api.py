@@ -425,12 +425,21 @@ def reuse_people_matte(pid: str, body: dict):
 @router.patch('/geometry')
 def patch_geometry(pid: str, body: dict):
     _project(pid)
-    allowed = {'reference_frame', 'focal_pixels', 'depth_scale', 'depth_bias', 'mattes', 'collision_mode'}
+    allowed = {'reference_frame', 'focal_pixels', 'depth_scale', 'depth_bias', 'mattes', 'collision_mode', 'depth_interpretation'}
     if set(body) - allowed:
         raise HTTPException(400, 'Geometry patches may change controls, not immutable asset paths or IDs.')
     with projects._lock(pid):
         p = _project(pid); _idle(p)
         cfg = copy.deepcopy(geometry.validate(p.get('geometry', {}), p['frames']))
+        if 'depth_interpretation' in body:
+            interpretation = body['depth_interpretation']
+            if (not isinstance(interpretation, dict) or set(interpretation) != {'id', 'kind'}
+                    or interpretation['kind'] not in ('inverse', 'distance')):
+                raise HTTPException(400, 'Choose a valid depth convention for the imported pass.')
+            depth = cfg.get('depth')
+            if not depth or depth['id'] != interpretation['id']:
+                raise HTTPException(409, 'The depth pass changed. Reload the shot and choose its convention again.')
+            depth['kind'] = interpretation['kind']
         if 'collision_mode' in body:
             if body['collision_mode'] not in ('matte2d', 'depth3d'):
                 raise HTTPException(400, 'Choose 2D matte or depth-based collision.')

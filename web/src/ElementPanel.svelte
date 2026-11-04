@@ -11,10 +11,12 @@
   import ColliderMaskPreview from './ColliderMaskPreview.svelte';
   let {project,selected,frame=0,disabled=false,onchange,onupdated,onprepare,onrender,onrerun,onmatte,onpreview,onconnect}:{project:Project;selected:Effect|null;frame?:number;disabled?:boolean;onchange:()=>void;onupdated:(p:Project)=>void;onprepare:(id:string)=>void;onrender:(id:string)=>void;onrerun:(id:string)=>void;onmatte?:(effectId:string,takeId:string)=>void;onpreview:(id:string)=>void;onconnect:()=>void}=$props();
   type Scope='depth'|'matte'|'geometry'|'model'|'approval'|'reuse'|'review'|'recovery'|'alpha';
+  type DepthKind = 'inverse' | 'distance';
   let errors=$state<Record<Scope,string>>({depth:'',matte:'',geometry:'',model:'',approval:'',reuse:'',review:'',recovery:'',alpha:''});
   let working=$state(''),workingScope=$state<Scope|null>(null),capabilities=$state<any>(null);
   let capabilitiesKey=$state('');
   let matteName=$state('Object'),matteKind=$state('hard'),pointX=$state(.5),pointY=$state(.5),referenceFrame=$state(0);
+  let depthKind=$state<DepthKind>('inverse');
   let pendingMatte=$state<{pid:string;effectId:string;jobId:string}|null>(null);
   let geometryTimer:ReturnType<typeof setTimeout>;
   let reviewMovies=$state<Record<string,{url:string;inputKey:string;frames:number;fps:number}>>({});
@@ -37,6 +39,7 @@
   const rows=$derived(project.element_takes?.filter(t=>t.effect_id===selected?.id)??[]);
   const assigned=$derived(selected?.element?.colliders??[]);
   $effect(()=>{referenceFrame=project.geometry?.reference_frame??0;});
+  $effect(()=>{depthKind=project.geometry?.depth?.kind??'inverse';});
   $effect(()=>{
     const pending=pendingMatte;
     if(!pending||pending.pid!==project.id)return;
@@ -66,12 +69,22 @@
     project.geometry??={reference_frame:0,focal_pixels:900,depth_scale:4,depth_bias:.05,depth:null,mattes:[]};
     project.geometry.collision_mode=value;await geometrySave();
   }
+  async function changeDepthKind(kind:DepthKind){
+    const depth=project.geometry?.depth;
+    if(!depth){depthKind=kind;return;}
+    const pid=project.id;
+    await work('depth','Updating depth interpretation…',()=>elementRequest(`/api/projects/${pid}/geometry`,{
+      method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({depth_interpretation:{id:depth.id,kind}}),
+    }),pid);
+    if(project.id===pid)depthKind=project.geometry?.depth?.kind??'inverse';
+  }
   function colliderChanged(matte:any,key:'colliderBlur'|'colliderDisplacement',value:number){matte[key]=value;clearTimeout(geometryTimer);const pid=project.id,payload=geometryPayload();geometryTimer=setTimeout(()=>writeGeometry(pid,payload),300);}
   async function upload(event:Event,kind:'depth'|'mattes'){
     const file=(event.currentTarget as HTMLInputElement).files?.[0];if(!file)return;
     const pid=project.id,effectId=selected?.id;
     await work(kind==='depth'?'depth':'matte',kind==='depth'?'Importing depth…':'Importing matte…',async()=>{
-      const fd=new FormData();fd.append('file',file);fd.append('name',matteName);fd.append('kind',kind==='depth'?'inverse':matteKind);fd.append('reference_frame',String(referenceFrame));
+      const fd=new FormData();fd.append('file',file);fd.append('name',matteName);fd.append('kind',kind==='depth'?depthKind:matteKind);fd.append('reference_frame',String(referenceFrame));
       const result=await elementRequest(`/api/projects/${pid}/geometry/${kind}`,{method:'POST',body:fd});
       if(kind==='mattes'&&effectId&&project.id===pid&&result.asset?.id)assignToEffect(effectId,result.asset.id);
     },pid);
@@ -136,7 +149,9 @@
           <fieldset disabled={disabled||!!working}>
             <label>Depth reference frame<input type="number" min="0" max={project.frames-1} bind:value={referenceFrame}/></label>
             <button disabled={!configured} onclick={()=>generate('depth')}>Generate depth · Comfy</button>
+            <label>Depth convention<select aria-label="Depth convention" bind:value={depthKind} onchange={e=>changeDepthKind(e.currentTarget.value as DepthKind)}><option value="inverse">Bright is near · inverse depth</option><option value="distance">Bright is far · distance</option></select></label>
             <label class="small">Or import depth PNG<input type="file" accept="image/png" onchange={e=>upload(e,'depth')}/></label>
+            <p class="small muted">Match the PNG’s convention. You can correct an imported pass here without uploading it again.</p>
           </fieldset>
           {#if !configured}<p class="small setup-notice">Comfy is not connected. Connect it to generate depth, or import a depth PNG. 2D matte collision works without depth.</p><button class="small" onclick={onconnect}>Connect Comfy</button>{:else}<p class="small muted">Uses the selected Comfy connection. Required depth models are checked when you submit; a connected account does not guarantee model availability.</p>{/if}
           {#if workingScope==='depth'}<p class="small" role="status">{working}</p>{/if}
